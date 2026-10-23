@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#121110">
-  <meta name="description" content="Push-up coach that watches your form through the camera and talks you through each set.">
+  <meta name="description" content="Camera coach that watches your push-up and squat form and talks you through each set.">
   <title>Push-up Coach</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -52,10 +52,10 @@
 
       <!-- setup -->
       <div class="panel" id="panel-setup">
-        <h1>Push-up coach</h1>
+        <h1 id="setup-title">Push-up coach</h1>
         <p class="lede">Watches your form through the camera, counts reps and talks you through the set.</p>
         <p class="plan-line" id="plan-line" hidden></p>
-        <ol class="tips">
+        <ol class="tips" id="tips">
           <li><b>Side-on.</b> Put the camera level with your body, at floor height, 2–3 m to your side.</li>
           <li><b>Whole body in view,</b> head to heels, with your hands under your shoulders.</li>
           <li><b>Light the room.</b> Tracking gets shaky in dim light.</li>
@@ -63,6 +63,10 @@
         <div class="row">
           <label for="target">Target reps</label>
           <div class="stepper"><button type="button" data-step="-1" aria-label="Fewer">−</button><output id="target">7</output><button type="button" data-step="1" aria-label="More">+</button></div>
+        </div>
+        <div class="row" id="row-weight" hidden>
+          <label for="weight">Dumbbell (lb)</label>
+          <div class="stepper"><button type="button" data-wstep="-5" aria-label="Lighter">−</button><output id="weight">0</output><button type="button" data-wstep="5" aria-label="Heavier">+</button></div>
         </div>
         <button class="primary" id="btn-camera" type="button">Turn on camera</button>
         <p class="fine" id="setup-msg">Nothing is recorded or uploaded. Tracking runs on this device.</p>

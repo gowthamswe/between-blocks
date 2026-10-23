@@ -36,6 +36,21 @@ All storage goes through `js/store.js`. Its methods are async, so a shared backe
 
 Each rep starts at 100 and loses points per fault (sag −25, shallow −20, pike −15, rushing −10).
 
+## What it checks (squats, filmed side-on)
+
+Bodyweight and goblet squats in the plan open the same coach with squat settings (`js/squat.js`, thresholds in `DEFAULTS`).
+
+| Check | How it's measured | Cue |
+|---|---|---|
+| Depth | Thigh angle at the bottom. Within 15° of level (or below) is full depth. The knee must bend to at least 120° for the rep to count | "Sit a little deeper" |
+| Heels | Heel rising more than 10% of shin length from where it sat standing. Skipped if the camera can't see the heel | "Keep your heels down" |
+| Chest | Torso more than 50° from vertical near the bottom (40° for goblet squats) | "Chest up" |
+| Rushing | Sitting down faster than 1 second (the plan asks for about 2) | "Sit down slowly" |
+
+Penalties: shallow −20, heels −20, chest −15, rushing −10. A big heel lift is corrected right away. The side view can't see knees caving in; that needs a front camera. For goblet squats the coach shows a dumbbell weight (starting at the last weight logged) and logs it with the sets.
+
+Squat phrases are the `sq_*` entries in `cues.json`. Until you rerun `tools/make_voice.py`, they're spoken in the browser's voice.
+
 **How the coach decides what to say:**
 - It speaks at the top of a rep, never mid-rep.
 - At most one correction per rep, in this order: sag, depth, pike, speed.

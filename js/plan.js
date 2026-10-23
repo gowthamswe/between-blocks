@@ -78,7 +78,7 @@ export function dayStatus(day, entries, done) {
 
 // One entry from the sets the camera coach counted.
 // `reps` is the lowest set, so "3 × 8" means every set reached 8; perSet keeps the detail.
-export function coachEntry(sets, { day, item, ts = Date.now() }) {
+export function coachEntry(sets, { day, item, ts = Date.now(), w = 0 }) {
   const perSet = sets.map((s) => s.reps);
   const all = sets.flatMap((s) => (s.repScores || []));
   const faults = {};
@@ -86,7 +86,7 @@ export function coachEntry(sets, { day, item, ts = Date.now() }) {
   const total = perSet.reduce((a, b) => a + b, 0);
   const wavg = (k) => (total ? sets.reduce((a, s) => a + (s[k] || 0) * s.reps, 0) / total : 0);
   return {
-    ex: item.ex, sets: sets.length, reps: Math.min(...perSet), w: 0, ts, day: day, block: item.block, item: item.idx,
+    ex: item.ex, sets: sets.length, reps: Math.min(...perSet), w, ts, day: day, block: item.block, item: item.idx,
     src: "coach", perSet,
     form: all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : Math.round(wavg("form")),
     faults, lowerS: Math.round(wavg("lowerS") * 10) / 10, depth: Math.round(wavg("depth")),
@@ -101,7 +101,7 @@ export function coachSet(reps, ts = Date.now()) {
   const avg = (f) => (n ? reps.reduce((a, r) => a + f(r), 0) / n : 0);
   return {
     reps: n, ts, faults, repScores: reps.map((r) => r.score),
-    form: Math.round(avg((r) => r.score)), lowerS: Math.round(avg((r) => r.lowerMs) / 100) / 10, depth: Math.round(avg((r) => r.minElbow)),
+    form: Math.round(avg((r) => r.score)), lowerS: Math.round(avg((r) => r.lowerMs) / 100) / 10, depth: Math.round(avg((r) => r.depth ?? r.minElbow)),
   };
 }
 

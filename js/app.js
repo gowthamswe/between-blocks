@@ -1,10 +1,11 @@
-// Wires camera -> pose model -> push-up analysis -> coach -> voice, and draws the screen.
-import { createPushupAnalyzer, LM } from "./pushup.js";
+// Wires camera -> pose model -> exercise analysis -> coach -> voice, and draws the screen.
+// The exercise comes from the plan item (coach.html?day=…&block=…&item=…) or ?move=pushup|squat|goblet.
 import { createCoach, summarize } from "./coach.js";
+import { MOVES, moveFor } from "./moves.js";
 import { createVoice } from "./voice.js";
 import { createPose, isPhone } from "./pose.js";
 import { createLocalStore } from "./store.js";
-import { findItem, targetText, coachSet, coachEntry } from "./plan.js";
+import { findItem, targetText, coachSet, coachEntry, lastEntry } from "./plan.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -23,7 +24,9 @@ const settings = {
 };
 
 const app = $("app"), video = $("video"), canvas = $("overlay"), g = canvas.getContext("2d");
-const analyzer = createPushupAnalyzer();
+let move = MOVES[new URLSearchParams(location.search).get("move")] || MOVES.pushup;
+let analyzer = move.create();
+let weight = 0;          // dumbbell weight for a goblet squat, logged with the sets
 const voice = createVoice();
 let cues = null, coach = null, pose = null, stream = null;
 let running = false, reps = [], setStartT = 0, lastValidT = null, wakeLock = null, looping = false;
@@ -34,13 +37,24 @@ const progressStore = createLocalStore();
 let ctx = null;          // { day, item, key, sets: [coachSet] }
 let restTimer = 0;
 
-const FAULT_LABEL = { sag: "Hips sagged", shallow: "Not deep enough", pike: "Hips too high", fast: "Lowered too fast" };
 const POSE_MSG = {
   nobody: ["Can't see you", "warn"],
   "not-visible": ["Get your whole body in view", "warn"],
-  "not-plank": ["Get into a plank, side-on", "warn"],
   "bad-geometry": ["Adjust the camera", "warn"],
 };
+const faultLabel = (f) => move.faults[f] || f;
+
+// Titles, tips and labels for the chosen exercise.
+function applyMove() {
+  document.title = move.title;
+  $("setup-title").textContent = move.title;
+  $("ex-label").textContent = move.name;
+  const tips = $("tips"); tips.textContent = "";
+  move.tips.forEach(([b, rest]) => { const li = document.createElement("li"); const s = document.createElement("b"); s.textContent = b; li.append(s, rest); tips.appendChild(li); });
+  $("row-weight").hidden = !move.weighted;
+  $("weight").textContent = weight;
+  renderPlanLabel();   // "set 1 of 3" when opened from the plan
+}
 
 // ---------- small UI helpers ----------
 function setPill(text, tone = "idle") { const p = $("pose-pill"); p.textContent = text; p.dataset.tone = tone; }
@@ -70,10 +84,10 @@ function renderLast(r) {
   (r.faults.length ? r.faults : ["ok"]).forEach((f) => {
     const c = document.createElement("span");
     c.className = "chip" + (f === "ok" ? " ok" : "");
-    c.textContent = f === "ok" ? "Clean rep" : FAULT_LABEL[f] || f;
+    c.textContent = f === "ok" ? "Clean rep" : faultLabel(f);
     chips.appendChild(c);
   });
-  $("last-meta").textContent = `${(r.lowerMs / 1000).toFixed(1)} s down · ${r.minElbow}° at the bottom`;
+  $("last-meta").textContent = `${(r.lowerMs / 1000).toFixed(1)} s down · ${move.depthText(r)}`;
 }
 
 // ---------- frame sizing ----------
@@ -171,12 +185,12 @@ function tick() {
 
 function handle(r, t) {
   if (r.valid) setPill(running ? `Tracking · ${r.phase}` : "In position", "good");
-  else { const [txt, tone] = POSE_MSG[r.reason] || ["Adjust the camera", "warn"]; setPill(txt, tone); }
+  else { const [txt, tone] = move.pose[r.reason] || POSE_MSG[r.reason] || ["Adjust the camera", "warn"]; setPill(txt, tone); }
 
   if (settings.debug) {
     $("debug").hidden = false;
     $("debug").textContent = r.valid
-      ? `elbow ${r.elbow.toFixed(0)}°  hips ${(r.line * 100).toFixed(1)}%  ${r.phase}\nside ${r.side}  tilt ${r.tilt.toFixed(0)}°  ${fps} fps  ${pose.size}/${pose.delegate}`
+      ? `${move.debug(r)}\nside ${r.side}  ${fps} fps  ${pose.size}/${pose.delegate}`
       : `${r.reason}  ${fps} fps`;
   } else $("debug").hidden = true;
 
@@ -191,7 +205,7 @@ function handle(r, t) {
     voice.say(coach.onRep(r.event));
   } else if (r.event.type === "half") {
     const said = coach.onHalf();
-    if (said.length) voice.say(said); else showCaption("Not counted: go deeper", "cue");
+    if (said.length) voice.say(said); else showCaption(move.key === "pushup" ? "Not counted: go deeper" : "Not counted: sit lower", "cue");
   }
 }
 
@@ -200,27 +214,23 @@ function draw(lm, r) {
   g.clearRect(0, 0, canvas.width, canvas.height);
   if (!lm) return;
   const W = canvas.width, H = canvas.height;
-  const side = LM[r.side || "l"];
+  const side = move.lm[r.side || "l"];
   const p = (i) => [lm[i].x * W, lm[i].y * H];
   const lw = Math.max(3, W / 220);
-  const bad = r.valid && r.live && (r.live.sag || r.live.pike);
+  const bad = r.valid && move.bad(r.live);
   const body = !r.valid ? "rgba(161,152,142,.8)" : bad ? "#F06A5B" : "#7FD39C";
   const line = (a, b, color, w = lw) => { g.strokeStyle = color; g.lineWidth = w; g.lineCap = "round"; g.beginPath(); g.moveTo(...p(a)); g.lineTo(...p(b)); g.stroke(); };
-  // body line: shoulder - hip - knee - ankle; arm: shoulder - elbow - wrist
-  line(side.shoulder, side.hip, body, lw * 1.4);
-  line(side.hip, side.knee, body, lw * 1.4);
-  line(side.knee, side.ankle, body, lw * 1.4);
-  line(side.shoulder, side.elbow, "#F6F1EA");
-  line(side.elbow, side.wrist, "#F6F1EA");
-  line(LM.nose, side.shoulder, "rgba(246,241,234,.5)", lw * 0.7);
-  // the straight line the hips should sit on
+  move.lines(side).forEach(([a, b, k]) => line(a, b, body, lw * k));
+  move.limb(side).forEach(([a, b]) => line(a, b, "#F6F1EA"));
+  line(move.lm.nose, side.shoulder, "rgba(246,241,234,.5)", lw * 0.7);
+  // push-ups: the straight line the hips should sit on; squats: knee over toes
   if (r.valid) {
     g.setLineDash([lw * 2, lw * 2.5]);
-    line(side.shoulder, side.ankle, "rgba(246,241,234,.35)", lw * 0.6);
+    line(...move.guide(side), "rgba(246,241,234,.35)", lw * 0.6);
     g.setLineDash([]);
   }
-  [side.shoulder, side.elbow, side.wrist, side.hip, side.knee, side.ankle].forEach((i) => {
-    g.fillStyle = i === side.elbow ? "#EF7C58" : "#F6F1EA";
+  move.dots(side).forEach((i) => {
+    g.fillStyle = i === move.hot(side) ? "#EF7C58" : "#F6F1EA";
     g.beginPath(); g.arc(...p(i), lw * 1.3, 0, Math.PI * 2); g.fill();
   });
 }
@@ -263,7 +273,7 @@ function renderPlanLabel() {
   if (!ctx) return;
   const done = ctx.sets.length, total = ctx.item.sets;
   app.dataset.plan = "1";
-  $("ex-label").textContent = done < total ? `Push-ups · set ${done + 1} of ${total}` : `Push-ups · ${done} sets done`;
+  $("ex-label").textContent = done < total ? `${move.name} · set ${done + 1} of ${total}` : `${move.name} · ${done} sets done`;
 }
 
 function startRest(secs) {
@@ -279,7 +289,7 @@ function startRest(secs) {
 
 async function saveToPlan() {
   if (!ctx || !ctx.sets.length) return;
-  await progressStore.addEntry(coachEntry(ctx.sets, { day: ctx.day.date, item: ctx.item }));
+  await progressStore.addEntry(coachEntry(ctx.sets, { day: ctx.day.date, item: ctx.item, w: move.weighted ? weight : 0 }));
   await progressStore.clearDraft(ctx.key);
   location.href = "./?day=" + ctx.day.date;
 }
@@ -298,11 +308,11 @@ function showSummary() {
   const ol = $("sum-reps"); ol.textContent = "";
   reps.forEach((r) => {
     const li = document.createElement("li");
-    const cells = [[`#${r.n}`, "n"], [r.score, "s"], [r.faults.map((f) => FAULT_LABEL[f]).join(", ") || "Clean", ""], [`${(r.lowerMs / 1000).toFixed(1)}s · ${r.minElbow}°`, "m"]];
+    const cells = [[`#${r.n}`, "n"], [r.score, "s"], [r.faults.map(faultLabel).join(", ") || "Clean", ""], [`${(r.lowerMs / 1000).toFixed(1)}s · ${r.depth ?? r.minElbow}°`, "m"]];
     cells.forEach(([t, c]) => { const sp = document.createElement("span"); if (c) sp.className = c; sp.textContent = t; li.appendChild(sp); });
     ol.appendChild(li);
   });
-  $("sum-text").value = summarize(reps, { target: settings.target });
+  $("sum-text").value = summarize(reps, { target: settings.target, move: move.summary });
   $("btn-copy").textContent = "Copy summary";
   clearInterval(restTimer); $("rest").hidden = true;
   if (ctx) {
@@ -315,7 +325,7 @@ function showSummary() {
     again.className = left > 0 ? "primary" : "ghost";
     again.textContent = left > 0 ? `Set ${k + 1} of ${total}` : "Extra set";
     $("sum-fine").textContent = left > 0 ? `${k} of ${total} sets kept. They're saved to the plan when you finish.`
-      : `All ${total} sets done. Save them to log today's push-ups.`;
+      : `All ${total} sets done. Save them to log today's ${move.name.toLowerCase()}.`;
     if (n && left > 0 && ctx.item.rest) startRest(ctx.item.rest);
     renderPlanLabel();
   }
@@ -332,6 +342,9 @@ function wire() {
     if (!ctx) store.set("target", settings.target);   // a plan's target stays with the plan
   }));
   $("btn-save").addEventListener("click", saveToPlan);
+  document.querySelectorAll("[data-wstep]").forEach((b) => b.addEventListener("click", () => {
+    weight = Math.max(0, Math.min(200, weight + Number(b.dataset.wstep))); $("weight").textContent = weight;
+  }));
   $("btn-camera").addEventListener("click", start);
   $("btn-set").addEventListener("click", () => (running ? endSet() : startSet()));
   $("btn-again").addEventListener("click", () => {
@@ -374,7 +387,9 @@ async function loadPlanContext() {
   if (!q.has("day")) return;
   try {
     const found = findItem(await progressStore.plan(), q.get("day"), Number(q.get("block") || 0), Number(q.get("item")));
-    if (!found || found.item.ex !== "pushup") return;
+    if (!found || !moveFor(found.item.ex)) return;
+    move = moveFor(found.item.ex); analyzer = move.create();
+    if (move.weighted) { const last = lastEntry(await progressStore.entries(), found.item.ex, found.day.date); weight = (last && last.w) || 0; }
     const key = `${found.day.date}.${found.item.block}.${found.item.idx}`;
     const draft = await progressStore.draft(key);
     ctx = { day: found.day, item: found.item, key, sets: (draft && draft.sets) || [] };
@@ -383,7 +398,7 @@ async function loadPlanContext() {
   $("target").textContent = settings.target;
   $("back").href = "./?day=" + ctx.day.date;
   const p = $("plan-line"); p.hidden = false; p.textContent = "";
-  const b = document.createElement("b"); b.textContent = `${ctx.day.title}: push-ups ${targetText(ctx.item)}`;
+  const b = document.createElement("b"); b.textContent = `${ctx.day.title}: ${move.name.toLowerCase()} ${targetText(ctx.item)}`;
   p.append(b, document.createTextNode(
     (ctx.item.rest ? `, ${ctx.item.rest} s rest` : "") + (ctx.item.note ? `. ${ctx.item.note[0].toUpperCase() + ctx.item.note.slice(1)}.` : ".") +
     (ctx.sets.length ? ` ${ctx.sets.length} set${ctx.sets.length === 1 ? "" : "s"} already done (${ctx.sets.map((s) => s.reps).join(", ")} reps).` : "")));
@@ -393,13 +408,14 @@ async function loadPlanContext() {
 async function boot() {
   wire();
   await loadPlanContext();
+  applyMove();
   try {
     cues = await (await fetch("cues.json")).json();
   } catch {
     setMsg("Couldn't load cues.json. Serve the folder over http (see README), don't open the file directly.", "warn");
     $("btn-camera").disabled = true; return;
   }
-  coach = createCoach({ cues, target: settings.target, countAloud: settings.count });
+  coach = createCoach({ cues, target: settings.target, countAloud: settings.count, coaching: move.coaching });
   voice.loadManifest();
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }

@@ -14,7 +14,18 @@ import { dayKey } from "./plan.js";
 
 export const PRIORITY = ["sag", "shallow", "pike", "fast"];
 
-export function createCoach({ cues, target = 0, countAloud = true, rng = Math.random } = {}) {
+// Per exercise: which faults to correct, most important first; the cue id for each fault and for the
+// start / half-rep / out-of-position lines; and which fault is bad enough to call out on the first rep.
+// Defaults are push-ups.
+export const PUSHUP_COACHING = {
+  priority: PRIORITY,
+  ids: { ready: "ready", half: "half", position: "position" },
+  cueFor: (f) => f,
+  urgent: (f, rep) => f === "sag" && rep.maxSag > 0.1,
+};
+
+export function createCoach({ cues, target = 0, countAloud = true, rng = Math.random, coaching = PUSHUP_COACHING } = {}) {
+  const { priority, ids, cueFor, urgent: isUrgent } = { ...PUSHUP_COACHING, ...coaching };
   const lib = cues.cues;
   const numWords = cues.numbers.words;
   const lastIdx = {};
@@ -47,7 +58,7 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
     lastPositionCueT = -Infinity; reps = 0;
   }
 
-  function onStart() { reset(); return [say("ready", "info")].filter(Boolean); }
+  function onStart() { reset(); return [say(ids.ready, "info")].filter(Boolean); }
 
   function onRep(rep) {
     reps = rep.n;
@@ -65,14 +76,14 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
 
     // one correction, highest priority eligible fault
     if (!praised) {
-      for (const f of PRIORITY) {
+      for (const f of priority) {
         if (!faults.includes(f)) continue;
         const seen = history.filter((h) => h.includes(f)).length;
-        const urgent = f === "sag" && rep.maxSag > 0.1;
+        const urgent = !!isUrgent(f, rep);
         const persistent = seen >= 2 || urgent;
         const cooled = lastCued[f] == null || rep.n - lastCued[f] >= 3;
         if (persistent && cooled) {
-          out.push(say(f, "cue"));
+          out.push(say(cueFor(f), "cue"));
           lastCued[f] = rep.n;
           pendingFix = { fault: f, rep: rep.n };
           break;
@@ -93,7 +104,7 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
     halfCount += 1;
     if (halfCount - lastHalfCue >= 2 || lastHalfCue === -Infinity) {
       lastHalfCue = halfCount;
-      return [say("half", "cue")].filter(Boolean);
+      return [say(ids.half, "cue")].filter(Boolean);
     }
     return [];
   }
@@ -102,7 +113,7 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
   function onLostPose(t, lostForMs) {
     if (lostForMs < 3000 || t - lastPositionCueT < 15000) return [];
     lastPositionCueT = t;
-    return [say("position", "info")].filter(Boolean);
+    return [say(ids.position, "info")].filter(Boolean);
   }
 
   function onEnd(total) {
@@ -119,19 +130,20 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
 }
 
 // Plain-text summary of a set, for pasting into Between Blocks or a chat with Claude.
-export function summarize(reps, { target = 0, date = new Date() } = {}) {
+// `move` names the exercise and its faults; defaults to push-ups.
+const PUSHUP_SUMMARY = { name: "Push-ups", joint: "elbow",
+  faults: { sag: "hips sagged", shallow: "not deep enough", pike: "hips too high", fast: "lowered too fast" } };
+export function summarize(reps, { target = 0, date = new Date(), move = PUSHUP_SUMMARY } = {}) {
   const n = reps.length;
-  if (!n) return "Push-ups: no counted reps.";
+  if (!n) return `${move.name}: no counted reps.`;
   const avg = Math.round(reps.reduce((s, r) => s + r.score, 0) / n);
   const tally = {};
   reps.forEach((r) => r.faults.forEach((f) => { tally[f] = (tally[f] || 0) + 1; }));
-  const names = { sag: "hips sagged", shallow: "not deep enough", pike: "hips too high", fast: "lowered too fast" };
   const faultTxt = Object.keys(tally).length
-    ? Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([f, c]) => `${names[f] || f} on ${c}`).join(", ")
+    ? Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([f, c]) => `${move.faults[f] || f} on ${c}`).join(", ")
     : "no form faults";
   const avgLower = (reps.reduce((s, r) => s + r.lowerMs, 0) / n / 1000).toFixed(1);
-  const avgDepth = Math.round(reps.reduce((s, r) => s + r.minElbow, 0) / n);
-  const d = dayKey(date);
-  return `${d} · Push-ups: ${n} reps${target ? ` (target ${target})` : ""}, form score ${avg}/100. ` +
-    `${faultTxt}. Avg lowering ${avgLower}s, avg depth ${avgDepth}° at the elbow.`;
+  const avgDepth = Math.round(reps.reduce((s, r) => s + (r.depth ?? r.minElbow), 0) / n);
+  return `${dayKey(date)} · ${move.name}: ${n} reps${target ? ` (target ${target})` : ""}, form score ${avg}/100. ` +
+    `${faultTxt}. Avg lowering ${avgLower}s, avg depth ${avgDepth}° at the ${move.joint}.`;
 }
