@@ -1,0 +1,791 @@
+{
+ "version": 1,
+ "source": "Between Blocks (claude.ai artifact QnWa5ajG5jx9mNGoqSRVJv, entries + done)",
+ "exported": "2026-10-23",
+ "entries": [
+  {
+   "ex": "pushup",
+   "reps": 5,
+   "sets": 3,
+   "ts": 1789778673000,
+   "w": 0,
+   "id": "e1789778673000-pushup"
+  },
+  {
+   "ex": "glute_br",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1789780855000,
+   "w": 0,
+   "id": "e1789780855000-glutebr"
+  },
+  {
+   "ex": "hollow",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1789780855001,
+   "w": 0,
+   "id": "e1789780855001-hollow"
+  },
+  {
+   "ex": "bw_squat",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1789781228000,
+   "w": 0,
+   "id": "e1789781228000-bwsquat"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-07",
+   "ex": "glute_br",
+   "reps": 15,
+   "sets": 2,
+   "ts": 1791420713411,
+   "w": 0,
+   "id": "96bdew8aamcshndzmw9r"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-07",
+   "ex": "hollow",
+   "reps": 15,
+   "sets": 2,
+   "ts": 1791420713412,
+   "w": 0,
+   "id": "19rz5yn815y3kn9aywn8"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "hang",
+   "reps": 15,
+   "sets": 2,
+   "ts": 1791595534469,
+   "w": 0,
+   "id": "c0frxituj0ya6q6ixku1"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "scap_pull",
+   "reps": 5,
+   "sets": 2,
+   "ts": 1791595534470,
+   "w": 0,
+   "id": "c2e5bougu40nqt2mruzo"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "pullup_neg",
+   "reps": 1,
+   "sets": 3,
+   "ts": 1791595534471,
+   "w": 0,
+   "id": "8kv66mwh8uygoemuomfl"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "pullup_b",
+   "reps": 3,
+   "sets": 3,
+   "ts": 1791595534472,
+   "w": 0,
+   "id": "nbbkzfsb7j35k6bo0hk1"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "pushup",
+   "reps": 6,
+   "sets": 3,
+   "ts": 1791595534473,
+   "w": 0,
+   "id": "4ffcz8n6g06scj7jd0tp"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "bw_squat",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1791595534474,
+   "w": 0,
+   "id": "vwxem950y47tlfviwk4i"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "glute_br",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1791595534475,
+   "w": 0,
+   "id": "8bwfi01knglpcmdc5zfs"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-09",
+   "ex": "hollow",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1791595534476,
+   "w": 0,
+   "id": "sac33tx3aetfvyomx8uv"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "bw_squat",
+   "reps": 10,
+   "sets": 1,
+   "ts": 1791677797586,
+   "w": 0,
+   "id": "29jvr3xa7o8x3k6sjxe2"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "goblet",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791677797587,
+   "w": 10,
+   "id": "jsne23bgy15ri02lw97s"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "db_row",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791677797588,
+   "w": 10,
+   "id": "pb625t89km8t7ko9ppzr"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "db_ohp",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791677797589,
+   "w": 10,
+   "id": "qxf897d6aijix65od6e2"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "db_rdl",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791677797590,
+   "w": 10,
+   "id": "u15uwj7t9yfy1a0lv673"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-10",
+   "ex": "knee_raise",
+   "reps": 6,
+   "sets": 2,
+   "ts": 1791677797591,
+   "w": 0,
+   "id": "9pj0szvlg4wn96vj4oou"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "hang",
+   "reps": 15,
+   "sets": 2,
+   "ts": 1791854524992,
+   "w": 0,
+   "id": "c8qixfxi8tyjohmzxq89"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "scap_pull",
+   "reps": 5,
+   "sets": 2,
+   "ts": 1791854524993,
+   "w": 0,
+   "id": "n0sswacfhuk3pqza8os7"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "pullup_neg",
+   "reps": 1,
+   "sets": 3,
+   "ts": 1791854524994,
+   "w": 0,
+   "id": "70qsme3go8xelb2ughse"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "pullup_b",
+   "reps": 3,
+   "sets": 3,
+   "ts": 1791854524995,
+   "w": 0,
+   "id": "jrpaxaw1ejl7uz5ho4h2"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "pushup",
+   "reps": 6,
+   "sets": 3,
+   "ts": 1791854524996,
+   "w": 0,
+   "id": "j9ln4bnf9ek8a54lyg9k"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "bw_squat",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1791854524997,
+   "w": 0,
+   "id": "zzqqhqwic2xnqc0voo4w"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "glute_br",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1791854524998,
+   "w": 0,
+   "id": "8iawvq30jvckvpbkl05b"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-12",
+   "ex": "hollow",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1791854524999,
+   "w": 0,
+   "id": "p193eabhux9g8sjkr74l"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "bw_squat",
+   "reps": 10,
+   "sets": 1,
+   "ts": 1791949969645,
+   "w": 0,
+   "id": "i2pvgtyl5caz3r7gciup"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "goblet",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791949969646,
+   "w": 10,
+   "id": "bt1dgmccuyio8f8si9x3"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "db_row",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791949969647,
+   "w": 10,
+   "id": "qzp1a96nhi5xckr1zjr6"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "db_ohp",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791949969648,
+   "w": 10,
+   "id": "oewtoc9hfqx8gnb4o3km"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "db_rdl",
+   "reps": 10,
+   "sets": 3,
+   "ts": 1791949969649,
+   "w": 10,
+   "id": "6v0jto3ebrowcyhmt921"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "knee_raise",
+   "reps": 6,
+   "sets": 2,
+   "ts": 1791949969650,
+   "w": 0,
+   "id": "ql3sjvy9muiib2ofo3ew"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-13",
+   "ex": "farmer",
+   "reps": 35,
+   "sets": 3,
+   "ts": 1791949969651,
+   "w": 10,
+   "id": "xd1v6vfe43808sjt9y7a"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "hang",
+   "reps": 15,
+   "sets": 2,
+   "ts": 1792026166072,
+   "w": 0,
+   "id": "b3wb90bam0kg1yhov2y5"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "scap_pull",
+   "reps": 5,
+   "sets": 2,
+   "ts": 1792026166073,
+   "w": 0,
+   "id": "xyi2sprr1ji3it2xz6gs"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "pullup_neg",
+   "reps": 1,
+   "sets": 3,
+   "ts": 1792026166074,
+   "w": 0,
+   "id": "v8jj8oqerhugsief0vy1"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "pullup_b",
+   "reps": 3,
+   "sets": 3,
+   "ts": 1792026166075,
+   "w": 0,
+   "id": "6abkp63n4jzu353izpok"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "pushup",
+   "reps": 6,
+   "sets": 3,
+   "ts": 1792026166076,
+   "w": 0,
+   "id": "6mkehhnup1teu5ik49m9"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "bw_squat",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792026166077,
+   "w": 0,
+   "id": "ua3udtcjpp7u01ze4p8f"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "glute_br",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1792026166078,
+   "w": 0,
+   "id": "lrqj95frtp4qr3t726uc"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-14",
+   "ex": "hollow",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1792026166079,
+   "w": 0,
+   "id": "x8fs8et0n50yotvvyq6c"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "hang",
+   "reps": 20,
+   "sets": 2,
+   "ts": 1792204482996,
+   "w": 0,
+   "id": "14848pwdn87s9l4kxfo9"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "scap_pull",
+   "reps": 6,
+   "sets": 2,
+   "ts": 1792204482997,
+   "w": 0,
+   "id": "g9hc4bxtavm9qsuz8t0t"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "pullup_neg",
+   "reps": 1,
+   "sets": 4,
+   "ts": 1792204482998,
+   "w": 0,
+   "id": "32rk49kj6onhs6chpios"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "pullup_b",
+   "reps": 5,
+   "sets": 3,
+   "ts": 1792204482999,
+   "w": 0,
+   "id": "xk9uhutsh1z3dffac2ya"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "pushup",
+   "reps": 7,
+   "sets": 3,
+   "ts": 1792204483000,
+   "w": 0,
+   "id": "6pu020zz3bve7d80kyoq"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "bw_squat",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1792204483001,
+   "w": 0,
+   "id": "av97rd3c3rylsc1q4nus"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "sl_bridge",
+   "reps": 8,
+   "sets": 3,
+   "ts": 1792204483002,
+   "w": 0,
+   "id": "sxgj6wwgya41vcalzahx"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-16",
+   "ex": "hollow",
+   "reps": 20,
+   "sets": 3,
+   "ts": 1792204483003,
+   "w": 0,
+   "id": "8wqsk04lwbap4bd9fv5e"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "bw_squat",
+   "reps": 10,
+   "sets": 1,
+   "ts": 1792282380025,
+   "w": 0,
+   "id": "4gk9euur5936ry9p0e6v"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "goblet",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792282380026,
+   "w": 10,
+   "id": "tsd6ckvo0x8dhixqkk0d"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "db_row",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792282380027,
+   "w": 10,
+   "id": "23ngktqyosfoui0e5h32"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "db_ohp",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792282380028,
+   "w": 10,
+   "id": "as6g1xcvifpor11apj32"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "db_rdl",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792282380029,
+   "w": 10,
+   "id": "69q6cbtexfkxrmmhmpg0"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "knee_raise",
+   "reps": 8,
+   "sets": 2,
+   "ts": 1792282380030,
+   "w": 0,
+   "id": "9u2swwa6orwy2rcf1xla"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-17",
+   "ex": "farmer",
+   "reps": 40,
+   "sets": 3,
+   "ts": 1792282380031,
+   "w": 10,
+   "id": "kgll2un9z13mtu5w7h0g"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "hang",
+   "reps": 20,
+   "sets": 2,
+   "ts": 1792465520571,
+   "w": 0,
+   "id": "xi6bioq1k6jrsaylk3jq"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "scap_pull",
+   "reps": 6,
+   "sets": 2,
+   "ts": 1792465520572,
+   "w": 0,
+   "id": "7757qbyhe9zds63rck2b"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "pullup_neg",
+   "reps": 1,
+   "sets": 4,
+   "ts": 1792465520573,
+   "w": 0,
+   "id": "so96kdmn8dtkqkcb2rlj"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "pullup_b",
+   "reps": 5,
+   "sets": 3,
+   "ts": 1792465520574,
+   "w": 0,
+   "id": "efi2p0stv5fdg67ierau"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "pushup",
+   "reps": 7,
+   "sets": 3,
+   "ts": 1792465520575,
+   "w": 0,
+   "id": "d0gthn1b1ht52d4vtau2"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "bw_squat",
+   "reps": 15,
+   "sets": 3,
+   "ts": 1792465520576,
+   "w": 0,
+   "id": "dfmqjpm3wivuhosu7nqg"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "glute_br",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792465520577,
+   "w": 0,
+   "id": "fy3f34ncsr9y7z9xohjw"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-19",
+   "ex": "hollow",
+   "reps": 20,
+   "sets": 3,
+   "ts": 1792465520578,
+   "w": 0,
+   "id": "v7kkctrepev05sliydwy"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "bw_squat",
+   "reps": 10,
+   "sets": 1,
+   "ts": 1792553455118,
+   "w": 0,
+   "id": "16jyx1jmr85vo1aplo6s"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "goblet",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792553455119,
+   "w": 10,
+   "id": "4ouhxuo2aglp52uqouy2"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "db_row",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792553455120,
+   "w": 10,
+   "id": "cegut6va9hykq5b79qj6"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "db_ohp",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792553455121,
+   "w": 10,
+   "id": "q6kzw985oyawttwimnyn"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "db_rdl",
+   "reps": 12,
+   "sets": 3,
+   "ts": 1792553455122,
+   "w": 10,
+   "id": "vehoczidifm0noq6ir0i"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "knee_raise",
+   "reps": 8,
+   "sets": 2,
+   "ts": 1792553455123,
+   "w": 0,
+   "id": "nr55kbny35ap20a9kngs"
+  },
+  {
+   "block": 0,
+   "day": "2026-10-20",
+   "ex": "farmer",
+   "reps": 40,
+   "sets": 3,
+   "ts": 1792553455124,
+   "w": 10,
+   "id": "1uj2oklgvh04efhbcrgv"
+  }
+ ],
+ "done": [
+  {
+   "block": 0,
+   "date": "2026-10-07",
+   "mins": 5,
+   "ts": 1791420714176
+  },
+  {
+   "block": 0,
+   "date": "2026-10-09",
+   "mins": 35,
+   "ts": 1791595537245
+  },
+  {
+   "block": 0,
+   "date": "2026-10-10",
+   "mins": 27,
+   "ts": 1791677799110
+  },
+  {
+   "block": 0,
+   "date": "2026-10-12",
+   "mins": 31,
+   "ts": 1791854527243
+  },
+  {
+   "block": 0,
+   "date": "2026-10-13",
+   "mins": 31,
+   "ts": 1791949971474
+  },
+  {
+   "block": 0,
+   "date": "2026-10-14",
+   "mins": 34,
+   "ts": 1792026168229
+  },
+  {
+   "block": 0,
+   "date": "2026-10-16",
+   "mins": 31,
+   "ts": 1792204485068
+  },
+  {
+   "block": 0,
+   "date": "2026-10-17",
+   "mins": 37,
+   "ts": 1792282382005
+  },
+  {
+   "block": 0,
+   "date": "2026-10-19",
+   "mins": 80,
+   "ts": 1792465523209
+  },
+  {
+   "block": 0,
+   "date": "2026-10-20",
+   "mins": 33,
+   "ts": 1792553457182
+  }
+ ]
+}

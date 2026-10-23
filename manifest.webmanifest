@@ -1,7 +1,7 @@
 {
-  "name": "Between Blocks Coach",
-  "short_name": "BB Coach",
-  "description": "Push-up coach that watches your form through the camera and talks you through each set.",
+  "name": "Between Blocks",
+  "short_name": "Between Blocks",
+  "description": "Your workout plan, with a camera coach that watches your push-up form and talks you through each set.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

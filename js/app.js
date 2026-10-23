@@ -3,6 +3,8 @@ import { createPushupAnalyzer, LM } from "./pushup.js";
 import { createCoach, summarize } from "./coach.js";
 import { createVoice } from "./voice.js";
 import { createPose, isPhone } from "./pose.js";
+import { createLocalStore } from "./store.js";
+import { findItem, targetText, coachSet, coachEntry } from "./plan.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -26,6 +28,11 @@ const voice = createVoice();
 let cues = null, coach = null, pose = null, stream = null;
 let running = false, reps = [], setStartT = 0, lastValidT = null, wakeLock = null, looping = false;
 let fps = 0, fpsN = 0, fpsT = performance.now();
+// Opened from the plan (coach.html?day=…&block=…&item=…): the plan's target, and the sets done so far.
+// Sets are kept in a draft so a reload or a closed tab doesn't lose them.
+const progressStore = createLocalStore();
+let ctx = null;          // { day, item, key, sets: [coachSet] }
+let restTimer = 0;
 
 const FAULT_LABEL = { sag: "Hips sagged", shallow: "Not deep enough", pike: "Hips too high", fast: "Lowered too fast" };
 const POSE_MSG = {
@@ -245,7 +252,36 @@ function endSet() {
   const b = $("btn-set"); b.textContent = "Start set"; b.dataset.running = "0";
   voice.say(coach.onEnd(reps.length));
   keepAwake(false);
+  if (ctx && reps.length) {
+    ctx.sets.push(coachSet(reps));
+    progressStore.saveDraft(ctx.key, { sets: ctx.sets });
+  }
   showSummary();
+}
+
+function renderPlanLabel() {
+  if (!ctx) return;
+  const done = ctx.sets.length, total = ctx.item.sets;
+  app.dataset.plan = "1";
+  $("ex-label").textContent = done < total ? `Push-ups · set ${done + 1} of ${total}` : `Push-ups · ${done} sets done`;
+}
+
+function startRest(secs) {
+  clearInterval(restTimer);
+  const r = $("rest"), end = Date.now() + secs * 1000;
+  const tick = () => {
+    const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    r.textContent = left ? `Rest ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "Rest done. Ready for the next set.";
+    if (!left) clearInterval(restTimer);
+  };
+  r.hidden = false; tick(); restTimer = setInterval(tick, 250);
+}
+
+async function saveToPlan() {
+  if (!ctx || !ctx.sets.length) return;
+  await progressStore.addEntry(coachEntry(ctx.sets, { day: ctx.day.date, item: ctx.item }));
+  await progressStore.clearDraft(ctx.key);
+  location.href = "./?day=" + ctx.day.date;
 }
 
 function showSummary() {
@@ -268,6 +304,21 @@ function showSummary() {
   });
   $("sum-text").value = summarize(reps, { target: settings.target });
   $("btn-copy").textContent = "Copy summary";
+  clearInterval(restTimer); $("rest").hidden = true;
+  if (ctx) {
+    const k = ctx.sets.length, total = ctx.item.sets, left = total - k;
+    if (n) $("sum-title").textContent = `Set ${k} of ${total}: ${n} rep${n === 1 ? "" : "s"}`;
+    const save = $("btn-save"), again = $("btn-again");
+    save.hidden = !k;
+    save.textContent = left > 0 ? `Save ${k} set${k === 1 ? "" : "s"} and stop` : `Save ${k} sets to plan`;
+    save.className = left > 0 ? "ghost" : "primary";
+    again.className = left > 0 ? "primary" : "ghost";
+    again.textContent = left > 0 ? `Set ${k + 1} of ${total}` : "Extra set";
+    $("sum-fine").textContent = left > 0 ? `${k} of ${total} sets kept. They're saved to the plan when you finish.`
+      : `All ${total} sets done. Save them to log today's push-ups.`;
+    if (n && left > 0 && ctx.item.rest) startRest(ctx.item.rest);
+    renderPlanLabel();
+  }
   $("hud").hidden = true; $("panel-summary").hidden = false;
   setState("summary");
 }
@@ -277,11 +328,14 @@ function wire() {
   $("target").textContent = settings.target;
   document.querySelectorAll(".stepper button").forEach((b) => b.addEventListener("click", () => {
     settings.target = Math.max(1, Math.min(30, settings.target + Number(b.dataset.step)));
-    $("target").textContent = settings.target; store.set("target", settings.target);
+    $("target").textContent = settings.target;
+    if (!ctx) store.set("target", settings.target);   // a plan's target stays with the plan
   }));
+  $("btn-save").addEventListener("click", saveToPlan);
   $("btn-camera").addEventListener("click", start);
   $("btn-set").addEventListener("click", () => (running ? endSet() : startSet()));
   $("btn-again").addEventListener("click", () => {
+    clearInterval(restTimer);
     $("panel-summary").hidden = true; $("hud").hidden = false; setState("live");
     reps = []; renderCount(); $("last").hidden = true;
   });
@@ -315,8 +369,30 @@ function wire() {
   $("chk-debug").addEventListener("change", (e) => { settings.debug = e.target.checked; store.set("debug", settings.debug); });
 }
 
+async function loadPlanContext() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has("day")) return;
+  try {
+    const found = findItem(await progressStore.plan(), q.get("day"), Number(q.get("block") || 0), Number(q.get("item")));
+    if (!found || found.item.ex !== "pushup") return;
+    const key = `${found.day.date}.${found.item.block}.${found.item.idx}`;
+    const draft = await progressStore.draft(key);
+    ctx = { day: found.day, item: found.item, key, sets: (draft && draft.sets) || [] };
+  } catch { return; }
+  settings.target = ctx.item.reps;
+  $("target").textContent = settings.target;
+  $("back").href = "./?day=" + ctx.day.date;
+  const p = $("plan-line"); p.hidden = false; p.textContent = "";
+  const b = document.createElement("b"); b.textContent = `${ctx.day.title}: push-ups ${targetText(ctx.item)}`;
+  p.append(b, document.createTextNode(
+    (ctx.item.rest ? `, ${ctx.item.rest} s rest` : "") + (ctx.item.note ? `. ${ctx.item.note[0].toUpperCase() + ctx.item.note.slice(1)}.` : ".") +
+    (ctx.sets.length ? ` ${ctx.sets.length} set${ctx.sets.length === 1 ? "" : "s"} already done (${ctx.sets.map((s) => s.reps).join(", ")} reps).` : "")));
+  renderPlanLabel();
+}
+
 async function boot() {
   wire();
+  await loadPlanContext();
   try {
     cues = await (await fetch("cues.json")).json();
   } catch {

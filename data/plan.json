@@ -1,0 +1,491 @@
+{
+ "version": 1,
+ "source": "Between Blocks (claude.ai artifact QnWa5ajG5jx9mNGoqSRVJv, plan/week v14)",
+ "exported": "2026-10-23",
+ "profile": {
+  "weight_lb": 143,
+  "height": "5'4\""
+ },
+ "days": [
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "hang",
+       "note": "warm-up, after 1 min of arm circles",
+       "rest": 60,
+       "secs": 15,
+       "sets": 2
+      },
+      {
+       "ex": "scap_pull",
+       "reps": 5,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "pullup_neg",
+       "note": "5-second lower",
+       "reps": 1,
+       "rest": 90,
+       "sets": 3
+      },
+      {
+       "ex": "pullup_b",
+       "note": "two heaviest bands, stop with 2 reps left",
+       "reps": 3,
+       "rest": 90,
+       "sets": 3
+      },
+      {
+       "ex": "pushup",
+       "note": "log what you actually got",
+       "reps": 6,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "bw_squat",
+       "reps": 12,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "glute_br",
+       "reps": 15,
+       "rest": 45,
+       "sets": 3
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 15,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-14",
+   "kind": "Full",
+   "note": "Bar day. Same targets as Friday; if every set went cleanly then, the next plan moves band pull-ups up.",
+   "title": "Pull, push and legs"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "glute_br",
+       "reps": 15,
+       "rest": 45,
+       "sets": 2
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 15,
+       "sets": 2
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-15",
+   "kind": "Easy",
+   "note": "Rest day. The two floor moves are optional, about 10 minutes; a walk or a full day off is just as good. Stay off the bar.",
+   "title": "Easy day"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "hang",
+       "note": "warm-up, after 1 min of arm circles",
+       "rest": 60,
+       "secs": 20,
+       "sets": 2
+      },
+      {
+       "ex": "scap_pull",
+       "reps": 6,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "pullup_neg",
+       "note": "5-second lower",
+       "reps": 1,
+       "rest": 90,
+       "sets": 4
+      },
+      {
+       "ex": "pullup_b",
+       "note": "two heaviest bands; if rep 5 is a grind, stop at 4 and log 4",
+       "reps": 5,
+       "rest": 90,
+       "sets": 3
+      },
+      {
+       "ex": "pushup",
+       "note": "one more than last week",
+       "reps": 7,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "bw_squat",
+       "reps": 15,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "each": true,
+       "ex": "sl_bridge",
+       "note": "each side",
+       "reps": 8,
+       "rest": 45,
+       "sets": 3
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 20,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-16",
+   "kind": "Full",
+   "note": "Week 2. Every target went up a step after you hit all of them last week. Band pull-ups move to 3 \u00d7 5 and there's a fourth negative; still stop each set with a rep or two to spare. Regular glute bridges become one-leg bridges.",
+   "title": "Pull, push and legs"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "bw_squat",
+       "note": "warm-up, slow and deep",
+       "reps": 10,
+       "rest": 45,
+       "sets": 1
+      },
+      {
+       "ex": "goblet",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 75,
+       "sets": 3
+      },
+      {
+       "each": true,
+       "ex": "db_row",
+       "note": "each arm, same weights as last week",
+       "reps": 12,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "db_ohp",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "db_rdl",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 75,
+       "sets": 3
+      },
+      {
+       "ex": "knee_raise",
+       "reps": 8,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "farmer",
+       "note": "go heavier if 35 sec felt easy last time",
+       "rest": 75,
+       "secs": 40,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-17",
+   "kind": "DBs",
+   "note": "Dumbbell day, the day after a bar day. Reps go from 10 to 12 with the same dumbbells. When all 3 sets of 12 feel solid, the next step is heavier dumbbells and back to 10. Farmer's walk last so your grip is fresh for the rows.",
+   "title": "Dumbbell day"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "glute_br",
+       "reps": 15,
+       "rest": 45,
+       "sets": 2
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 20,
+       "sets": 2
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-18",
+   "kind": "Easy",
+   "note": "Rest day. The two floor moves are optional, about 10 minutes; a walk or a full day off is just as good. Stay off the bar.",
+   "title": "Easy day"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "hang",
+       "note": "warm-up, after 1 min of arm circles",
+       "rest": 60,
+       "secs": 20,
+       "sets": 2
+      },
+      {
+       "ex": "scap_pull",
+       "reps": 6,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "pullup_neg",
+       "note": "5-second lower",
+       "reps": 1,
+       "rest": 90,
+       "sets": 4
+      },
+      {
+       "ex": "pullup_b",
+       "note": "two heaviest bands; if rep 5 is a grind, stop at 4 and log 4",
+       "reps": 5,
+       "rest": 90,
+       "sets": 3
+      },
+      {
+       "ex": "pushup",
+       "note": "same as Friday",
+       "reps": 7,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "bw_squat",
+       "reps": 15,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "glute_br",
+       "note": "3-second squeeze at the top, feet close to your hips",
+       "reps": 12,
+       "rest": 45,
+       "sets": 3
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 20,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-19",
+   "kind": "Full",
+   "note": "Same targets as Friday. If anything felt too hard then, log what you actually did and repeat it today.",
+   "title": "Pull, push and legs"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "bw_squat",
+       "note": "warm-up, slow and deep",
+       "reps": 10,
+       "rest": 45,
+       "sets": 1
+      },
+      {
+       "ex": "goblet",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 75,
+       "sets": 3
+      },
+      {
+       "each": true,
+       "ex": "db_row",
+       "note": "each arm, same weights as last week",
+       "reps": 12,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "db_ohp",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "db_rdl",
+       "note": "same weights as last week",
+       "reps": 12,
+       "rest": 75,
+       "sets": 3
+      },
+      {
+       "ex": "knee_raise",
+       "reps": 8,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "farmer",
+       "note": "go heavier if 35 sec felt easy last time",
+       "rest": 75,
+       "secs": 40,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-20",
+   "kind": "DBs",
+   "note": "Dumbbell day, the day after a bar day. Reps go from 10 to 12 with the same dumbbells. When all 3 sets of 12 feel solid, the next step is heavier dumbbells and back to 10. Farmer's walk last so your grip is fresh for the rows.",
+   "title": "Dumbbell day"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "glute_br",
+       "reps": 15,
+       "rest": 45,
+       "sets": 2
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 20,
+       "sets": 2
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-21",
+   "kind": "Easy",
+   "note": "Rest day. The two floor moves are optional, about 10 minutes; a walk or a full day off is just as good. Stay off the bar.",
+   "skipped": true,
+   "skippedAt": 1792637699934,
+   "title": "Easy day",
+   "wasKind": "Easy",
+   "wasTitle": "Easy day"
+  },
+  {
+   "blocks": [],
+   "date": "2026-10-22",
+   "kind": "Skipped",
+   "note": "",
+   "skipped": true,
+   "skippedAt": 1792730968549,
+   "title": "Skipped",
+   "wasKind": "Full",
+   "wasTitle": "Pull, push and legs"
+  },
+  {
+   "blocks": [
+    {
+     "items": [
+      {
+       "ex": "hang",
+       "note": "warm-up, after 1 min of arm circles",
+       "rest": 60,
+       "secs": 20,
+       "sets": 2
+      },
+      {
+       "ex": "scap_pull",
+       "reps": 6,
+       "rest": 60,
+       "sets": 2
+      },
+      {
+       "ex": "pullup_neg",
+       "note": "5-second lower",
+       "reps": 1,
+       "rest": 90,
+       "sets": 4
+      },
+      {
+       "ex": "pullup_b",
+       "note": "two heaviest bands; if rep 5 is a grind, stop at 4 and log 4",
+       "reps": 5,
+       "rest": 90,
+       "sets": 3
+      },
+      {
+       "ex": "pushup",
+       "note": "up to 8 if 7 felt solid this week",
+       "reps": 8,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "bw_squat",
+       "reps": 15,
+       "rest": 60,
+       "sets": 3
+      },
+      {
+       "ex": "glute_br",
+       "note": "3-second squeeze at the top, feet close to your hips",
+       "reps": 12,
+       "rest": 45,
+       "sets": 3
+      },
+      {
+       "ex": "hollow",
+       "rest": 45,
+       "secs": 20,
+       "sets": 3
+      }
+     ],
+     "name": "Today's session"
+    }
+   ],
+   "date": "2026-10-23",
+   "kind": "Full",
+   "note": "Push-ups go to 8 today if 7 felt solid on Friday and Monday; if not, stay at 7 and log what you got.",
+   "title": "Pull, push and legs"
+  }
+ ],
+ "from": "2026-10-14",
+ "updated": "2026-10-16"
+}

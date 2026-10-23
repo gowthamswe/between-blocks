@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#121110">
-  <meta name="description" content="Push-up coach that watches your form through the camera and talks you through each set.">
-  <title>Between Blocks Coach</title>
+  <meta name="description" content="Your workout plan, with a camera coach for push-ups.">
+  <title>Between Blocks</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -13,99 +13,41 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/plan.css">
 </head>
-<body>
-  <main class="app" id="app" data-state="setup">
-
-    <header class="bar">
-      <div class="brand"><b>Between Blocks</b> <span>Coach</span></div>
-      <span class="ex">Push-ups</span>
-      <span class="pill" id="pose-pill" data-tone="idle">Camera off</span>
-      <button class="icon-btn" id="btn-settings" type="button" aria-label="Settings" title="Settings">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm7.4 4.6-1.6-.4a6 6 0 0 1-.5 1.3l.9 1.4-1.6 1.6-1.4-.9a6 6 0 0 1-1.3.5l-.4 1.6H8.5l-.4-1.6a6 6 0 0 1-1.3-.5l-1.4.9-1.6-1.6.9-1.4a6 6 0 0 1-.5-1.3l-1.6-.4V8.9l1.6-.4c.1-.5.3-.9.5-1.3l-.9-1.4 1.6-1.6 1.4.9c.4-.2.8-.4 1.3-.5l.4-1.6h2.3l.4 1.6c.5.1.9.3 1.3.5l1.4-.9 1.6 1.6-.9 1.4c.2.4.4.8.5 1.3l1.6.4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-      </button>
+<body class="plan-page">
+  <div class="pg">
+    <header class="pg-head">
+      <div class="brand"><b>Between Blocks</b></div>
+      <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-today" aria-selected="true" aria-controls="view-today" type="button">Today</button>
+        <button class="tab" role="tab" id="tab-progress" aria-selected="false" aria-controls="view-progress" type="button">Progress</button>
+        <button class="tab" role="tab" id="tab-history" aria-selected="false" aria-controls="view-history" type="button">History</button>
+      </nav>
     </header>
 
-    <section class="stage" id="stage">
-      <div class="frame" id="frame">
-        <video id="video" playsinline muted></video>
-        <canvas id="overlay"></canvas>
-      </div>
-
-      <div class="hud" id="hud" hidden>
-        <div class="count">
-          <span class="count-n" id="count">0</span>
-          <span class="count-of" id="count-of">/ 7</span>
-          <span class="count-lab">reps</span>
-        </div>
-        <div class="last" id="last" hidden>
-          <span class="last-lab">Last rep</span>
-          <span class="last-score" id="last-score">—</span>
-          <div class="chips" id="last-chips"></div>
-          <span class="last-meta" id="last-meta"></span>
-        </div>
-        <div class="caption" id="caption" aria-live="polite"></div>
-        <div class="debug" id="debug" hidden></div>
-      </div>
-
-      <!-- setup -->
-      <div class="panel" id="panel-setup">
-        <h1>Push-up coach</h1>
-        <p class="lede">Watches your form through the camera, counts reps and talks you through the set.</p>
-        <ol class="tips">
-          <li><b>Side-on.</b> Put the camera level with your body, at floor height, 2–3 m to your side.</li>
-          <li><b>Whole body in view,</b> head to heels, with your hands under your shoulders.</li>
-          <li><b>Light the room.</b> Tracking gets shaky in dim light.</li>
-        </ol>
-        <div class="row">
-          <label for="target">Target reps</label>
-          <div class="stepper"><button type="button" data-step="-1" aria-label="Fewer">−</button><output id="target">7</output><button type="button" data-step="1" aria-label="More">+</button></div>
-        </div>
-        <button class="primary" id="btn-camera" type="button">Turn on camera</button>
-        <p class="fine" id="setup-msg">Nothing is recorded or uploaded. Tracking runs on this device.</p>
-      </div>
-
-      <!-- set summary -->
-      <div class="panel" id="panel-summary" hidden>
-        <h1 id="sum-title">Set done</h1>
-        <div class="stats" id="sum-stats"></div>
-        <ol class="replist" id="sum-reps"></ol>
-        <textarea id="sum-text" readonly rows="3" aria-label="Summary to paste into your log"></textarea>
-        <div class="actions">
-          <button class="ghost" id="btn-copy" type="button">Copy summary</button>
-          <button class="primary" id="btn-again" type="button">Next set</button>
-        </div>
-        <p class="fine">Paste the summary into Between Blocks or a chat with Claude to log it.</p>
-      </div>
+    <section id="view-today" role="tabpanel" aria-labelledby="tab-today">
+      <div class="week" id="week" aria-label="Plan days"></div>
+      <div id="day"></div>
     </section>
 
-    <footer class="controls" id="controls" hidden>
-      <button class="toggle" id="btn-voice" type="button" aria-pressed="true">Voice on</button>
-      <button class="toggle" id="btn-count" type="button" aria-pressed="true">Count aloud</button>
-      <button class="primary big" id="btn-set" type="button">Start set</button>
-    </footer>
+    <section id="view-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+      <div class="sec-head"><h2>Where each exercise stands</h2><span class="hint">last 8 results, oldest first</span></div>
+      <ul class="prog" id="prog"></ul>
+    </section>
 
-    <!-- settings -->
-    <dialog id="settings">
-      <form method="dialog" class="settings">
-        <h2>Settings</h2>
-        <label for="sel-camera">Camera</label>
-        <select id="sel-camera"></select>
-        <label for="sel-model">Tracking model</label>
-        <select id="sel-model">
-          <option value="auto">Auto (most accurate this device runs well)</option>
-          <option value="lite">Lite: fastest</option>
-          <option value="full">Full: balanced</option>
-          <option value="heavy">Heavy: most accurate</option>
-        </select>
-        <label class="check"><input type="checkbox" id="chk-mirror"> Mirror the picture</label>
-        <label class="check"><input type="checkbox" id="chk-debug"> Show angles (debug)</label>
-        <p class="fine" id="voice-src"></p>
-        <div class="actions"><button class="primary" value="close">Done</button></div>
-      </form>
-    </dialog>
-  </main>
+    <section id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="sec-head"><h2>Logged sessions</h2><span class="hint" id="hist-count"></span></div>
+      <div class="hist-actions">
+        <button class="ghost" id="btn-copylog" type="button">Copy last 14 days for Claude</button>
+        <button class="ghost" id="btn-export" type="button">Download all progress (JSON)</button>
+      </div>
+      <p class="fine" id="hist-msg"></p>
+      <div id="hist"></div>
+    </section>
 
-  <script type="module" src="js/app.js"></script>
+    <footer class="pg-foot" id="foot"></footer>
+  </div>
+  <script type="module" src="js/planapp.js"></script>
 </body>
 </html>

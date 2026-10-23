@@ -10,6 +10,8 @@
 //  - after a correction, praise the first rep that fixes it, once
 //  - rotate phrasings so it doesn't sound like a loop
 
+import { dayKey } from "./plan.js";
+
 export const PRIORITY = ["sag", "shallow", "pike", "fast"];
 
 export function createCoach({ cues, target = 0, countAloud = true, rng = Math.random } = {}) {
@@ -129,7 +131,7 @@ export function summarize(reps, { target = 0, date = new Date() } = {}) {
     : "no form faults";
   const avgLower = (reps.reduce((s, r) => s + r.lowerMs, 0) / n / 1000).toFixed(1);
   const avgDepth = Math.round(reps.reduce((s, r) => s + r.minElbow, 0) / n);
-  const d = date.toISOString().slice(0, 10);
+  const d = dayKey(date);
   return `${d} · Push-ups: ${n} reps${target ? ` (target ${target})` : ""}, form score ${avg}/100. ` +
     `${faultTxt}. Avg lowering ${avgLower}s, avg depth ${avgDepth}° at the elbow.`;
 }

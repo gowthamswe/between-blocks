@@ -4,7 +4,17 @@ A push-up coach that runs in the browser. It watches you through the camera, cou
 
 Everything runs on your device. No video is recorded or uploaded.
 
-**Status:** first version, push-ups only. Squats and pull-ups come next.
+**Status:** your Between Blocks plan now lives here too. Open the app to see today's session, log each exercise, and use the camera coach for push-ups (other exercises are logged by hand). Squats and pull-ups come next for the coach.
+
+## The plan and your progress
+
+- `data/plan.json` is the plan, copied from the Between Blocks artifact on 2026-10-23 (10 days, Oct 14–23). Claude writes this file; the app only reads it.
+- `data/history.json` is the log exported from Between Blocks (73 entries, 10 finished sessions). The app copies it into the browser once, on first open.
+- Everything you log after that is saved **in this browser only** (localStorage, keys `bb.*`). It isn't synced to other devices or back to the Between Blocks artifact.
+- **Push-ups:** tap *Coach with camera*. The coach takes the plan's target (e.g. 3 × 8), counts sets 1 of 3, runs the rest timer, and keeps finished sets if the page reloads. *Save to plan* logs all sets with the form score and takes you back.
+- **History → Copy last 14 days for Claude** gives Claude a plain-text log to plan the next days. **Download all progress** saves a JSON with the plan, every entry and the finished sessions. That file is what moves into shared storage later.
+
+All storage goes through `js/store.js`. Its methods are async, so a shared backend (Claude writes the plan, the app reads it and writes progress) can replace localStorage without touching the screens.
 
 ## What it checks (push-ups, filmed side-on)
 
@@ -36,7 +46,7 @@ cd between-blocks
 python3 -m http.server 8000
 ```
 
-Open http://localhost:8000 in Chrome and allow the camera.
+Open http://localhost:8000 in Chrome for the plan. The coach is at http://localhost:8000/coach.html; open it from a push-up item so it picks up the target.
 
 **Camera placement:** side-on at floor height, 2–3 m away, with your whole body in view from head to heels. Keep the room bright. The skeleton turns green when it can see you in a plank, and red at the hips when they sag or pike. Settings → "Show angles" displays the live numbers if you want to tune the thresholds.
 
@@ -71,14 +81,22 @@ At the end of a set, the summary gives you one line, for example:
 
 > 2026-10-23 · Push-ups: 7 reps (target 7), form score 88/100. hips sagged on 2. Avg lowering 1.9s, avg depth 90° at the elbow.
 
-Copy it into Between Blocks, or paste it to Claude.
+When you open the coach from the plan, *Save to plan* logs it for you. The summary line is still there to paste to Claude.
 
 ## Files
 
 ```
-index.html            the app
-css/app.css           styles
-js/app.js             camera → pose → analysis → coach → voice, plus drawing
+index.html            the plan: today, progress, history
+coach.html            the camera coach
+css/app.css           styles (coach, and the shared colors)
+css/plan.css          plan screen styles
+js/planapp.js         plan screen: day strip, logging, progress, history, export
+js/plan.js            plan + progress logic (no browser code, testable)
+js/store.js           where the plan and progress live (today: data/ + localStorage)
+js/exercises.js       exercise names and form cues, as in Between Blocks
+data/plan.json        the plan (written by Claude)
+data/history.json     log exported from Between Blocks, seeds the browser once
+js/app.js             coach: camera → pose → analysis → coach → voice, plus drawing
 js/pose.js            loads MediaPipe Pose Landmarker (runs in the browser, GPU when available)
 js/pushup.js          push-up geometry, rep phases, faults, score (no browser code, testable)
 js/coach.js           what to say and when, and the set summary (no browser code, testable)
@@ -95,9 +113,13 @@ tests/                node tests on synthetic push-ups
 npm test        # node --test, no installs needed
 ```
 
+`tests/plan.test.js` checks the copied plan and history, how logged entries match plan items, coach sets turning into one entry, progress trends, the text log for Claude, and the local store (seeding once, drafts surviving a reload, export).
+
 The tests generate fake side-on push-ups (clean, sagging, piking, shallow, rushed, half reps, losing the pose mid-rep) and check the counting, the faults, and the coach's timing rules.
 
 ## Next
+
+- Shared storage for the plan and progress, per user: Claude writes the plan, the app reads it and writes progress. Then hosting.
 
 - Tune the thresholds on real sets (Settings → "Show angles").
 - Add squats and goblet squats (side view), then dead hangs, negatives and band pull-ups (front view, on the power tower).
