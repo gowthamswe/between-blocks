@@ -1,0 +1,24 @@
+{
+  "_about": "Everything the coach can say. Each key is a cue id; each entry has one or more phrasings. Audio clips are named <id>_<index> (numbers: n_<count>). tools/make_voice.py reads this file to generate natural-voice clips; the app falls back to the browser's voice for any clip that's missing.",
+  "cues": {
+    "sag":         ["Hips up", "Squeeze your glutes, hips up", "Keep a straight line"],
+    "shallow":     ["Go lower", "Chest closer to the floor", "All the way down"],
+    "pike":        ["Hips down a little", "Flatten out, hips down"],
+    "fast":        ["Slow it down", "Two seconds on the way down", "Control the lowering"],
+    "half":        ["That one didn't count. All the way down", "Not quite, go deeper"],
+    "praise":      ["Better", "That's it", "Good, keep that"],
+    "two_more":    ["Two more"],
+    "last_one":    ["Last one"],
+    "target_done": ["That's the target. Great set"],
+    "position":    ["Turn side on, whole body in view", "Step back, I need to see all of you"],
+    "ready":       ["Get into your plank when you're ready"],
+    "set_done":    ["Set done"],
+    "reps_word":   ["reps"]
+  },
+  "numbers": {
+    "max": 30,
+    "words": ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+              "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+              "Twenty one", "Twenty two", "Twenty three", "Twenty four", "Twenty five", "Twenty six", "Twenty seven", "Twenty eight", "Twenty nine", "Thirty"]
+  }
+}
