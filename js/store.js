@@ -12,12 +12,19 @@
 //   exportAll()       everything, as one JSON object, for moving to another store
 //
 // On first run the local store is seeded from data/history.json (the log exported from Between Blocks).
+//
+// Mirror: on localhost, after every change the whole log is PUT to the dev server (tools/serve.mjs),
+// which writes data/progress.json. Claude syncs that file into the Between Blocks artifact.
+// Best effort: if the server isn't there (plain http.server, hosted copy), nothing breaks.
 
 const P = "bb.";
+const onLocalhost = () => { try { return ["localhost", "127.0.0.1", "[::1]"].includes(globalThis.location.hostname); } catch { return false; } };
 
-export function createLocalStore({ storage = globalThis.localStorage, fetchJson = defaultFetch, base = "data/" } = {}) {
+export function createLocalStore({ storage = globalThis.localStorage, fetchJson = defaultFetch, base = "data/",
+  mirror = onLocalhost() ? defaultMirror : null } = {}) {
   const get = (k, d) => { try { const v = storage.getItem(P + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
   const set = (k, v) => { storage.setItem(P + k, JSON.stringify(v)); };
+  const push = () => { if (mirror) mirror({ seeded: get("seeded", null), entries: get("entries", []), done: get("done", []) }).catch(() => {}); };
   let planCache = null;
 
   async function seed() {
@@ -33,7 +40,7 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
     set("entries", entries); set("done", done);
     set("seeded", { at: Date.now(), from: (hist && hist.exported) || null, count: entries.length });
   }
-  const ready = seed();
+  const ready = seed().then(push);   // also sends what's already here when the page opens
 
   const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -48,17 +55,17 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
     async addEntry(e) {
       await ready;
       const rec = { ...e, id: e.id || newId(), ts: e.ts || Date.now() };
-      const list = get("entries", []); list.push(rec); set("entries", list);
+      const list = get("entries", []); list.push(rec); set("entries", list); push();
       return rec;
     },
-    async removeEntry(id) { await ready; set("entries", get("entries", []).filter((e) => e.id !== id)); },
+    async removeEntry(id) { await ready; set("entries", get("entries", []).filter((e) => e.id !== id)); push(); },
     async done() { await ready; return get("done", []); },
     async markDone(rec) {
       await ready;
       const list = get("done", []).filter((d) => d.date !== rec.date);
-      list.push({ block: 0, ts: Date.now(), ...rec }); set("done", list);
+      list.push({ block: 0, ts: Date.now(), ...rec }); set("done", list); push();
     },
-    async unmarkDone(date) { await ready; set("done", get("done", []).filter((d) => d.date !== date)); },
+    async unmarkDone(date) { await ready; set("done", get("done", []).filter((d) => d.date !== date)); push(); },
     async draft(key) { return get("draft." + key, null); },
     async saveDraft(key, value) { set("draft." + key, value); },
     async clearDraft(key) { try { storage.removeItem(P + "draft." + key); } catch { /* ignore */ } },
@@ -69,6 +76,11 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
         plan, entries: get("entries", []), done: get("done", []) };
     },
   };
+}
+
+async function defaultMirror(data) {
+  const res = await fetch("api/progress", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
+  if (!res.ok) throw new Error("mirror: " + res.status);
 }
 
 async function defaultFetch(url) {

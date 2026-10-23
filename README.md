@@ -14,6 +14,15 @@ Everything runs on your device. No video is recorded or uploaded.
 - **Push-ups:** tap *Coach with camera*. The coach takes the plan's target (e.g. 3 × 8), counts sets 1 of 3, runs the rest timer, and keeps finished sets if the page reloads. *Save to plan* logs all sets with the form score and takes you back.
 - **History → Copy last 14 days for Claude** gives Claude a plain-text log to plan the next days. **Download all progress** saves a JSON with the plan, every entry and the finished sessions. That file is what moves into shared storage later.
 
+### Syncing to Between Blocks (stopgap)
+
+Until there's shared storage, Claude copies your progress into the Between Blocks artifact on request:
+
+1. Run the app with `npm run serve`, not `python3 -m http.server`. On every change the app sends its log to the server, which writes `data/progress.json` (gitignored).
+2. Ask Claude to "sync to Between Blocks". Claude dumps the artifact's `entries` and `done`, runs `node tools/bb-sync.mjs <dump-dir> writes.json`, and applies the writes in one batch.
+
+The sync is one-way (this app → Between Blocks). Records it writes carry `via: "bb-coach"`. Something you log directly in Between Blocks is reported but never deleted, and it doesn't show up here, so log in this app.
+
 All storage goes through `js/store.js`. Its methods are async, so a shared backend (Claude writes the plan, the app reads it and writes progress) can replace localStorage without touching the screens.
 
 ## What it checks (push-ups, filmed side-on)
@@ -43,7 +52,7 @@ The camera only works over `https://` or `http://localhost`, so serve the folder
 
 ```sh
 cd between-blocks
-python3 -m http.server 8000
+npm run serve        # node, no installs; also keeps data/progress.json for syncing
 ```
 
 Open http://localhost:8000 in Chrome for the plan. The coach is at http://localhost:8000/coach.html; open it from a push-up item so it picks up the target.
@@ -103,6 +112,8 @@ js/coach.js           what to say and when, and the set summary (no browser code
 js/voice.js           plays recorded clips, falls back to the browser's voice
 cues.json             every phrase the coach can say
 tools/make_voice.py   generates the voice clips (Kokoro or macOS voices)
+tools/serve.mjs       local server; mirrors progress to data/progress.json
+tools/bb-sync.mjs     plans the sync of data/progress.json into Between Blocks
 sw.js, manifest.webmanifest, icons/   installable app + offline cache
 tests/                node tests on synthetic push-ups
 ```
