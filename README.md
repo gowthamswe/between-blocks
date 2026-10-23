@@ -64,6 +64,19 @@ Lying on your back, knees bent, camera at floor height (`js/bridge.js`). The rep
 
 Penalties: low −20, squeeze −15, arch −15, dropping −10. One-leg bridges aren't coached yet: the side view can't see your hips tilting or twisting.
 
+## What it checks (Romanian deadlifts, filmed side-on)
+
+Dumbbell RDLs, camera at hip height (`js/rdl.js`). The torso's angle from vertical drives the reps. Like goblet squats, the coach shows a dumbbell weight starting at the last one logged.
+
+| Check | How it's measured | Cue |
+|---|---|---|
+| Hips back, not down | Knee angle at the bottom. Below 135° the knees are doing the work (a squat) | "Push your hips back, not down" |
+| Weights close | Wrist more than 0.6 shin lengths in front of the middle of the foot. Skipped if the wrist is hidden | "Keep the weights close to your legs" |
+| Hinge depth | Torso at least 45° from vertical at the bottom (the hamstring stretch). Under 35° doesn't count | "Hinge a little further" |
+| Rushing | Lowering faster than 1 second (the plan asks for about 2) | "Slow it down" |
+
+Penalties: knees −20, depth −20, weights −15, rushing −10. A deep knee bend (under 120°) is corrected right away. A rounded back can't be judged: shoulder and hip are the only torso points the tracking gives.
+
 **How the coach decides what to say:**
 - It speaks at the top of a rep, never mid-rep.
 - At most one correction per rep, in this order: sag, depth, pike, speed.

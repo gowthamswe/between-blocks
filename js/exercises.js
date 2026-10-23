@@ -1,6 +1,6 @@
 // Exercise names and form cues, copied from the Between Blocks app so the plan reads the same.
 // `bw`: bodyweight (no weight field). `timed`: the target is seconds, logged as reps.
-// `coach`: the camera coach can run this exercise (push-ups, squats, glute bridges; see js/moves.js).
+// `coach`: the camera coach can run this exercise (push-ups, squats, glute bridges, Romanian deadlifts; see js/moves.js).
 
 export const EXERCISES = {
   pushup_he:  { name: "Push-up, hands elevated", group: "push", bw: true },
@@ -29,7 +29,7 @@ export const EXERCISES = {
   step_up:    { name: "Step-up", group: "legs" },
   glute_br:   { name: "Glute bridge", group: "hinge", bw: true, coach: true },
   sl_bridge:  { name: "One-leg glute bridge", group: "hinge", bw: true },
-  db_rdl:     { name: "Romanian deadlift", group: "hinge" },
+  db_rdl:     { name: "Romanian deadlift", group: "hinge", coach: true },
   kb_swing:   { name: "Kettlebell swing", group: "hinge" },
   nordic:     { name: "Nordic curl", group: "hinge", bw: true },
   hollow:     { name: "Hollow hold", group: "core", bw: true, timed: true },

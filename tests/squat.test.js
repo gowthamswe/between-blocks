@@ -95,7 +95,7 @@ test("squat summary reads like a log line", () => {
 
 test("plan squats open the camera coach", () => {
   assert.ok(canCoach("bw_squat") && canCoach("goblet") && canCoach("pushup"));
-  assert.ok(!canCoach("db_rdl"));
+  assert.ok(!canCoach("db_row"));
   assert.equal(moveFor("bw_squat").key, "squat");
   assert.equal(moveFor("goblet").key, "goblet"); assert.ok(moveFor("goblet").weighted);
 });

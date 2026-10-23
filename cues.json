@@ -116,6 +116,37 @@
     "br_position": [
       "Turn side on, shoulders to feet in view",
       "Move the camera back, I need to see your feet"
+    ],
+    "rd_squat": [
+      "Push your hips back, not down",
+      "Less knee bend, hips back",
+      "Soft knees, send your hips back"
+    ],
+    "rd_drift": [
+      "Keep the weights close to your legs",
+      "Slide them down your thighs",
+      "Weights close"
+    ],
+    "rd_shallow": [
+      "Hinge a little further",
+      "Reach for the hamstring stretch",
+      "Hips back further"
+    ],
+    "rd_fast": [
+      "Slow it down",
+      "Two seconds on the way down",
+      "Control the lowering"
+    ],
+    "rd_half": [
+      "That one didn't count. Hips further back",
+      "Hinge deeper, to the stretch"
+    ],
+    "rd_ready": [
+      "Stand tall, side on, weights at your thighs"
+    ],
+    "rd_position": [
+      "Turn side on, head to feet in view",
+      "Step back, I need to see your feet"
     ]
   },
   "numbers": {

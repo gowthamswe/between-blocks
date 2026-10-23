@@ -1,5 +1,5 @@
 // The plan screen: day strip, today's session, logging, progress and history.
-// Push-ups, squats and glute bridges open the camera coach (coach.html), which logs its sets back through the same store.
+// Push-ups, squats, glute bridges and RDLs open the camera coach (coach.html), which logs its sets back through the same store.
 import { createLocalStore } from "./store.js";
 import { exName, isTimed, isBodyweight, canCoach, CUES } from "./exercises.js";
 import { makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
@@ -267,7 +267,7 @@ async function boot() {
   await refresh();
   const want = params.get("day");
   sel = want && dayFor(plan, want) ? want : pickDay(plan);
-  $("foot").textContent = `Plan updated ${plan.updated || "?"} · progress saved in this browser (${entries.length} entries) · camera coach for push-ups, squats and glute bridges`;
+  $("foot").textContent = `Plan updated ${plan.updated || "?"} · progress saved in this browser (${entries.length} entries) · camera coach for push-ups, squats, glute bridges and RDLs`;
   await render();
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }
