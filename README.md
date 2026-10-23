@@ -51,6 +51,19 @@ Penalties: shallow −20, heels −20, chest −15, rushing −10. A big heel li
 
 Squat phrases are the `sq_*` entries in `cues.json`. Until you rerun `tools/make_voice.py`, they're spoken in the browser's voice.
 
+## What it checks (glute bridges, filmed side-on)
+
+Lying on your back, knees bent, camera at floor height (`js/bridge.js`). The rep is counted when your hips come back down, so the squeeze and the lowering can be judged. The squeeze time comes from the plan note ("3-second squeeze at the top" = 3 s; otherwise 1 s). While you hold, the screen counts the seconds, and the coach says "and down" when you've held long enough.
+
+| Check | How it's measured | Cue |
+|---|---|---|
+| Hips all the way up | Shoulder-hip-knee angle at the top. 170° or more is full; under 160° doesn't count | "Hips higher" |
+| Arching | Hips pushed more than 12° past the shoulder-knee line | "Ribs down" |
+| Squeeze | Time held near the top, against the plan's squeeze (0.3 s slack). A slow rise doesn't count as holding | "Hold the squeeze at the top" |
+| Dropping | Lowering from the squeeze faster than about 0.75 s | "Lower slowly" |
+
+Penalties: low −20, squeeze −15, arch −15, dropping −10. One-leg bridges aren't coached yet: the side view can't see your hips tilting or twisting.
+
 **How the coach decides what to say:**
 - It speaks at the top of a rep, never mid-rep.
 - At most one correction per rep, in this order: sag, depth, pike, speed.

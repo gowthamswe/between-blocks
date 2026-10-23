@@ -116,6 +116,9 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
     return [say(ids.position, "info")].filter(Boolean);
   }
 
+  // a timed squeeze at the top is done (glute bridge): tell them to come down
+  function onHeld() { return ids.held ? [say(ids.held, "info")].filter(Boolean) : []; }
+
   function onEnd(total) {
     const out = [say("set_done", "info")];
     if (total > 0) { out.push(num(total)); out.push(say("reps_word", "info")); }
@@ -123,7 +126,7 @@ export function createCoach({ cues, target = 0, countAloud = true, rng = Math.ra
   }
 
   return {
-    onStart, onRep, onHalf, onLostPose, onEnd, reset,
+    onStart, onRep, onHalf, onHeld, onLostPose, onEnd, reset,
     set target(v) { target = v; }, get target() { return target; },
     set countAloud(v) { countAloud = v; },
   };
@@ -144,6 +147,7 @@ export function summarize(reps, { target = 0, date = new Date(), move = PUSHUP_S
     : "no form faults";
   const avgLower = (reps.reduce((s, r) => s + r.lowerMs, 0) / n / 1000).toFixed(1);
   const avgDepth = Math.round(reps.reduce((s, r) => s + (r.depth ?? r.minElbow), 0) / n);
+  const tail = move.tail ? move.tail(reps, avgDepth) : `avg depth ${avgDepth}° at the ${move.joint}`;
   return `${dayKey(date)} · ${move.name}: ${n} reps${target ? ` (target ${target})` : ""}, form score ${avg}/100. ` +
-    `${faultTxt}. Avg lowering ${avgLower}s, avg depth ${avgDepth}° at the ${move.joint}.`;
+    `${faultTxt}. Avg lowering ${avgLower}s, ${tail}.`;
 }

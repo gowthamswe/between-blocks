@@ -3,11 +3,13 @@
 // (bodyweight and goblet squats share the squat analyzer; goblet keeps the chest more upright).
 import { createPushupAnalyzer, LM as PUSHUP_LM } from "./pushup.js";
 import { createSquatAnalyzer, LM as SQUAT_LM, GOBLET } from "./squat.js";
+import { createBridgeAnalyzer, LM as BRIDGE_LM, holdFromNote } from "./bridge.js";
 import { PUSHUP_COACHING } from "./coach.js";
 
 const pushup = {
   key: "pushup", name: "Push-ups", title: "Push-up coach", joint: "elbow", unit: "push-up",
   create: () => createPushupAnalyzer(),
+  downWord: "Not counted: go deeper",
   coaching: PUSHUP_COACHING,
   faults: { sag: "Hips sagged", shallow: "Not deep enough", pike: "Hips too high", fast: "Lowered too fast" },
   summary: { name: "Push-ups", joint: "elbow", faults: { sag: "hips sagged", shallow: "not deep enough", pike: "hips too high", fast: "lowered too fast" } },
@@ -36,6 +38,7 @@ const squatBase = {
     urgent: (f, rep) => f === "heels" && rep.maxHeel > 0.2,
   },
   faults: { shallow: "Not deep enough", heels: "Heels lifted", lean: "Chest dropped", fast: "Sat down too fast" },
+  downWord: "Not counted: sit lower",
   summary: { name: "Squats", joint: "knee", faults: { shallow: "not deep enough", heels: "heels lifted", lean: "chest dropped", fast: "sat down too fast" } },
   pose: { "not-standing": ["Stand up, side-on", "warn"] },
   tips: [["Side-on.", " Put the camera at hip height, 2–3 m to your side."],
@@ -55,7 +58,36 @@ const squat = { ...squatBase, key: "squat", create: () => createSquatAnalyzer() 
 const goblet = { ...squatBase, key: "goblet", name: "Goblet squats", title: "Goblet squat coach", weighted: true,
   summary: { ...squatBase.summary, name: "Goblet squats" }, create: () => createSquatAnalyzer(GOBLET) };
 
-export const MOVES = { pushup, squat, goblet };
+// Glute bridge, lying on your back side-on. The plan's squeeze ("3-second squeeze at the top") sets the hold.
+const bridge = {
+  key: "bridge", name: "Glute bridges", title: "Glute bridge coach", joint: "hip", unit: "bridge",
+  create: (item) => createBridgeAnalyzer({ holdMs: holdFromNote(item && item.note) || 1000 }),
+  coaching: {
+    priority: ["low", "arch", "hold", "fast"],
+    ids: { ready: "br_ready", half: "br_half", position: "br_position", held: "br_down" },
+    cueFor: (f) => "br_" + f,
+    urgent: (f, rep) => f === "arch" && rep.peak > 200,
+  },
+  faults: { low: "Hips not all the way up", arch: "Back arched", hold: "Squeeze too short", fast: "Dropped down" },
+  summary: { name: "Glute bridges", joint: "hip", faults: { low: "hips not all the way up", arch: "back arched", hold: "squeeze too short", fast: "dropped down" },
+    tail: (reps, avg) => `avg squeeze ${(reps.reduce((s, r) => s + r.holdMs, 0) / reps.length / 1000).toFixed(1)}s, avg hip angle ${avg}° at the top` },
+  pose: { "not-lying": ["Lie on your back, side-on, knees bent", "warn"] },
+  tips: [["Side-on.", " Put the camera at floor height, 2–3 m to your side."],
+    ["Shoulders to feet in view,", " lying on your back with your knees bent."],
+    ["Light the room.", " Tracking gets shaky in dim light."]],
+  lines: (s) => [[s.shoulder, s.hip, 1.4], [s.hip, s.knee, 1.4], [s.knee, s.ankle, 1.4]],
+  limb: () => [],
+  guide: (s) => [s.shoulder, s.knee],
+  dots: (s) => [s.shoulder, s.hip, s.knee, s.ankle],
+  hot: (s) => s.hip,
+  lm: BRIDGE_LM,
+  bad: (live) => live && live.arch,
+  depthText: (r) => `${r.peak}° at the top, squeezed ${(r.holdMs / 1000).toFixed(1)} s`,
+  debug: (r) => `hip ${r.ext.toFixed(0)}°  ${r.phase}`,
+  downWord: "Not counted: hips all the way up",
+};
+
+export const MOVES = { pushup, squat, goblet, bridge };
 // plan exercise -> coach move
-export const MOVE_FOR = { pushup: "pushup", bw_squat: "squat", goblet: "goblet" };
+export const MOVE_FOR = { pushup: "pushup", bw_squat: "squat", goblet: "goblet", glute_br: "bridge" };
 export const moveFor = (ex) => MOVES[MOVE_FOR[ex]] || null;

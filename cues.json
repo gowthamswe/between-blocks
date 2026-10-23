@@ -81,6 +81,41 @@
     "sq_position": [
       "Turn side on, head to feet in view",
       "Step back, I need to see your feet"
+    ],
+    "br_low": [
+      "Hips higher",
+      "Push through your heels, hips up",
+      "Squeeze all the way up"
+    ],
+    "br_arch": [
+      "Ribs down",
+      "Don't arch, squeeze your glutes",
+      "Tuck your ribs, hips level"
+    ],
+    "br_hold": [
+      "Hold the squeeze at the top",
+      "Pause at the top",
+      "Squeeze and hold"
+    ],
+    "br_fast": [
+      "Lower slowly",
+      "Control it down"
+    ],
+    "br_half": [
+      "That one didn't count. Hips all the way up",
+      "Higher, squeeze to the top"
+    ],
+    "br_down": [
+      "And down",
+      "Lower",
+      "Down slowly"
+    ],
+    "br_ready": [
+      "Lie on your back, side on, knees bent"
+    ],
+    "br_position": [
+      "Turn side on, shoulders to feet in view",
+      "Move the camera back, I need to see your feet"
     ]
   },
   "numbers": {

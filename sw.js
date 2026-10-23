@@ -1,8 +1,8 @@
 // Offline support. App files and data/*.json: network first (so updates show up), cached copy when offline.
 // Pose model, MediaPipe runtime, fonts and voice clips: cache first (big and rarely change).
-const VERSION = "bbc-v5";
+const VERSION = "bbc-v6";
 const SHELL = ["./", "index.html", "coach.html", "css/app.css", "css/plan.css", "js/app.js", "js/planapp.js",
-  "js/plan.js", "js/store.js", "js/exercises.js", "js/figures.js", "js/moves.js", "js/squat.js", "data/plan.json", "data/history.json", "js/pushup.js", "js/coach.js", "js/voice.js", "js/pose.js",
+  "js/plan.js", "js/store.js", "js/exercises.js", "js/figures.js", "js/moves.js", "js/squat.js", "js/bridge.js", "data/plan.json", "data/history.json", "js/pushup.js", "js/coach.js", "js/voice.js", "js/pose.js",
   "cues.json", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

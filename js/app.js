@@ -25,8 +25,9 @@ const settings = {
 
 const app = $("app"), video = $("video"), canvas = $("overlay"), g = canvas.getContext("2d");
 let move = MOVES[new URLSearchParams(location.search).get("move")] || MOVES.pushup;
-let analyzer = move.create();
+let analyzer = move.create(null);
 let weight = 0;          // dumbbell weight for a goblet squat, logged with the sets
+let lastHoldShown = 0;
 const voice = createVoice();
 let cues = null, coach = null, pose = null, stream = null;
 let running = false, reps = [], setStartT = 0, lastValidT = null, wakeLock = null, looping = false;
@@ -196,6 +197,12 @@ function handle(r, t) {
 
   if (!running) return;
   if (r.valid) lastValidT = t;
+  // timed squeeze (glute bridge): show the seconds held against the plan's target
+  if (r.valid && r.live && r.live.holding && analyzer.cfg.holdMs && t - lastHoldShown > 200) {
+    lastHoldShown = t;
+    const held = Math.min(r.live.holdMs, analyzer.cfg.holdMs) / 1000;
+    showCaption(held * 1000 >= analyzer.cfg.holdMs ? "Down" : `Squeeze ${held.toFixed(1)} / ${analyzer.cfg.holdMs / 1000} s`, "info");
+  }
   else voice.say(coach.onLostPose(t, t - (lastValidT ?? setStartT)));
 
   if (!r.event) return;
@@ -205,7 +212,9 @@ function handle(r, t) {
     voice.say(coach.onRep(r.event));
   } else if (r.event.type === "half") {
     const said = coach.onHalf();
-    if (said.length) voice.say(said); else showCaption(move.key === "pushup" ? "Not counted: go deeper" : "Not counted: sit lower", "cue");
+    if (said.length) voice.say(said); else showCaption(move.downWord, "cue");
+  } else if (r.event.type === "held") {
+    voice.say(coach.onHeld());
   }
 }
 
@@ -388,7 +397,7 @@ async function loadPlanContext() {
   try {
     const found = findItem(await progressStore.plan(), q.get("day"), Number(q.get("block") || 0), Number(q.get("item")));
     if (!found || !moveFor(found.item.ex)) return;
-    move = moveFor(found.item.ex); analyzer = move.create();
+    move = moveFor(found.item.ex); analyzer = move.create(found.item);
     if (move.weighted) { const last = lastEntry(await progressStore.entries(), found.item.ex, found.day.date); weight = (last && last.w) || 0; }
     const key = `${found.day.date}.${found.item.block}.${found.item.idx}`;
     const draft = await progressStore.draft(key);
