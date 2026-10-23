@@ -40,10 +40,6 @@ function media(ex) {
   host.append(yt);
   return host;
 }
-function thumb(ex) {
-  if (PHOTOS[ex]) return el("span", { class: "thumb ph" }, el("img", { src: photoSrc(ex, 0), alt: "", loading: "lazy" }));
-  return el("span", { class: "thumb fig" }, makeFigure(ex, true).svg);
-}
 
 function el(tag, attrs = {}, ...kids) {
   const e = document.createElement(tag);
@@ -82,7 +78,7 @@ function renderWeek() {
   if (on) on.scrollIntoView({ block: "nearest", inline: "center" });
 }
 
-// ---------- the selected day ----------
+// ---------- the selected day: session list on the left, the selected exercise on the right ----------
 async function renderDay() {
   const host = $("day"); host.textContent = "";
   const today = dayKey(), days = planDays(plan);
@@ -92,70 +88,97 @@ async function renderDay() {
 
   const d = dayFor(plan, sel);
   if (!d) return;
-  const st = dayStatus(d, entries, done);
-  const card = el("article", { class: "session" });
-  card.append(el("div", { class: "s-head" },
-    el("div", {}, el("span", { class: "s-kind", text: d.skipped ? "Skipped" : d.kind }), el("h1", { class: "s-title", text: d.skipped ? (d.wasTitle ? `Skipped (was ${d.wasTitle.toLowerCase()})` : "Skipped") : d.title }),
-      el("p", { class: "s-date", text: shortDate(d.date) + (d.date === today ? " · today" : "") })),
-    st === "done" ? el("span", { class: "done-pill" }, TICK(), "Done") : null));
-  if (d.skipped) { card.append(el("p", { class: "s-note", text: "This day was skipped in Between Blocks and everything after it moved back a day." })); host.append(card); return; }
-  if (d.note) card.append(el("p", { class: "s-note", text: d.note }));
-
-  const list = el("ol", { class: "items" });
-  const items = dayItems(d);
-  if (openItem === undefined) {
-    const next = items.find((it) => !entriesFor(entries, d.date, it).length);
-    openItem = next ? itemKey(d.date, next) : null;
+  if (d.skipped) {
+    host.append(el("div", { class: "empty-card" }, el("h2", { text: d.wasKind === "Easy" ? "Rest day skipped" : "Skipped" }),
+      el("p", { text: `${shortDate(d.date)}${d.wasTitle ? ` was ${d.wasTitle.toLowerCase()}` : ""}. It was skipped in Between Blocks, and everything after it moved back a day.` })));
+    return;
   }
-  for (let n = 0; n < items.length; n++) list.append(await renderItem(d, items[n], n + 1));
-  card.append(list);
+  const items = dayItems(d);
+  const keys = items.map((it) => itemKey(d.date, it));
+  if (!keys.includes(openItem)) {
+    const next = items.find((it) => !entriesFor(entries, d.date, it).length);
+    openItem = itemKey(d.date, next || items[0]);
+  }
+  const cur = keys.indexOf(openItem);
+  const board = el("section", { class: "board" });
+  board.append(renderMap(d, items, cur), await renderStage(d, items, cur));
+  host.append(board);
+}
 
+function select(key) {
+  openItem = key; openForm = null; render();
+  if (matchMedia("(max-width: 900px)").matches) $("stage")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+}
+
+function renderMap(d, items, cur) {
+  const today = dayKey(), st = dayStatus(d, entries, done);
+  const map = el("aside", { class: "map" });
+  map.append(el("span", { class: "s-kind", text: d.kind }),
+    el("h1", { class: "map-title", text: d.title }),
+    el("p", { class: "map-facts" }, shortDate(d.date) + (d.date === today ? " · today" : "") + ` · ${items.length} exercises`,
+      st === "done" ? el("span", { class: "done-pill" }, TICK(), "Done") : null));
+  if (d.note) map.append(el("p", { class: "coach-note", text: d.note }));
+  const ol = el("ol", { class: "moves" });
+  items.forEach((it, i) => {
+    const key = itemKey(d.date, it), logged = entriesFor(entries, d.date, it);
+    const s = i === cur ? "now" : logged.length ? "done" : "todo";
+    ol.append(el("li", {}, el("button", { class: "move", type: "button", "data-s": s, "data-logged": logged.length ? "1" : null, "aria-current": i === cur ? "true" : null, onclick: () => select(key) },
+      el("span", { class: "move-num" }, logged.length ? TICK() : String(i + 1).padStart(2, "0")),
+      el("span", { class: "move-mid" }, el("span", { class: "move-name", text: exName(it.ex) }),
+        el("span", { class: "move-sub", text: logged.length ? "Logged " + entryText(logged[logged.length - 1]) : it.note || (canCoach(it.ex) ? "camera coach" : "") })),
+      el("span", { class: "move-t", text: targetText(it) }))));
+  });
+  map.append(ol);
   const doneRec = done.find((x) => x.date === d.date);
   const foot = el("div", { class: "s-foot" });
   if (doneRec) foot.append(el("span", { class: "fine", text: "Session marked done." }), el("button", { class: "linkish", type: "button", text: "Undo", onclick: async () => { await store.unmarkDone(d.date); await refresh(); render(); } }));
   else if (st === "started" || st === "done") foot.append(el("button", { class: "primary", type: "button", text: "Mark session done", onclick: async () => { await store.markDone({ date: d.date }); await refresh(); render(); } }));
-  card.append(foot);
-  host.append(card);
+  if (foot.childNodes.length) map.append(foot);
+  return map;
 }
 
-async function renderItem(d, it, n) {
+async function renderStage(d, items, cur) {
+  const it = items[cur], key = itemKey(d.date, it);
   const logged = entriesFor(entries, d.date, it);
-  const key = itemKey(d.date, it);
   const draft = canCoach(it.ex) ? await store.draft(key) : null;
-  const li = el("li", { class: "item", "data-s": logged.length ? "done" : draft ? "started" : "todo" });
-  const facts = [targetText(it), it.rest ? `rest ${it.rest} s` : null].filter(Boolean).join(" · ");
-  const open = openItem === key;
-  li.dataset.open = open ? "1" : "0";
-  const toggle = () => { openItem = open ? null : key; render(); };
-  li.append(el("div", { class: "i-head", role: "button", tabindex: "0", "aria-expanded": open ? "true" : "false",
-      onclick: toggle, onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } } },
-    el("span", { class: "i-num" }, logged.length ? TICK() : String(n)),
-    el("div", { class: "i-main" },
-      el("div", { class: "i-name", text: exName(it.ex) }),
-      el("div", { class: "i-target", text: facts }),
-      it.note ? el("div", { class: "i-note", text: it.note }) : null),
-    open ? null : thumb(it.ex)));
+  const stage = el("div", { class: "stage", id: "stage" });
+  stage.append(el("div", { class: "st-head" }, el("h2", { class: "st-name", text: exName(it.ex) }), el("span", { class: "st-step", text: `${cur + 1} of ${items.length}` })));
+  if (it.note) stage.append(el("p", { class: "st-note", text: it.note[0].toUpperCase() + it.note.slice(1) }));
 
-  const body = el("div", { class: "i-body" });
-  if (open) body.append(media(it.ex));
-  if (CUES[it.ex]) body.append(el("details", { class: "cues", open: open }, el("summary", { text: "Form cues" }), el("ul", {}, CUES[it.ex].map((c) => el("li", { text: c })))));
+  const unit = isTimed(it.ex) ? "sec hold" : it.each ? "reps each side" : it.reps === 1 ? "rep" : "reps";
+  const row = el("div", { class: "st-row" },
+    el("div", { class: "st-target" }, el("span", { class: "big-num", text: `${it.sets}×${isTimed(it.ex) ? it.secs : it.reps}` }),
+      el("span", { class: "big-lab" }, el("b", { text: unit }), el("small", { text: it.rest ? `${it.sets} sets · rest ${it.rest} s` : `${it.sets} sets` }))));
+  const acts = el("div", { class: "ctrls" });
+  acts.append(el("button", { class: "ic-btn", type: "button", "aria-label": "Previous exercise", disabled: cur === 0, onclick: () => select(itemKey(d.date, items[cur - 1])), text: "←" }));
+  if (!logged.length) {
+    if (canCoach(it.ex)) {
+      const q = new URLSearchParams({ day: d.date, block: it.block, item: it.idx });
+      acts.append(el("a", { class: "play-btn", href: "coach.html?" + q, text: draft && draft.sets && draft.sets.length ? `Continue (${draft.sets.length}/${it.sets} sets)` : "Coach with camera" }));
+    }
+    acts.append(el("button", { class: canCoach(it.ex) ? "ghost-btn" : "play-btn", type: "button", text: openForm === key ? "Cancel" : "Log", onclick: () => { openForm = openForm === key ? null : key; render(); } }));
+  }
+  acts.append(el("button", { class: "ic-btn", type: "button", "aria-label": "Next exercise", disabled: cur === items.length - 1, onclick: () => select(itemKey(d.date, items[cur + 1])), text: "→" }));
+  row.append(acts);
+  stage.append(row);
+
   logged.forEach((e) => {
     const extra = e.src === "coach" ? ` · camera coach, form ${e.form}/100` : "";
-    body.append(el("div", { class: "logged" }, el("span", { text: "Logged " + entryText(e) + extra }),
+    stage.append(el("div", { class: "logged" }, el("span", {}, TICK(), " Logged " + entryText(e) + extra),
       el("button", { class: "linkish", type: "button", text: "Remove", onclick: async () => { await store.removeEntry(e.id); await refresh(); render(); } })));
   });
+  if (openForm === key) stage.append(logForm(d, it));
+  stage.append(media(it.ex));
+  if (CUES[it.ex]) stage.append(el("ul", { class: "cues" }, CUES[it.ex].map((c) => el("li", { text: c }))));
 
-  const acts = el("div", { class: "i-acts" });
-  if (canCoach(it.ex) && !logged.length) {
-    const q = new URLSearchParams({ day: d.date, block: it.block, item: it.idx });
-    const label = draft && draft.sets && draft.sets.length ? `Continue with coach (${draft.sets.length} of ${it.sets} sets)` : "Coach with camera";
-    acts.append(el("a", { class: "primary", href: "coach.html?" + q, text: label }));
+  const nx = items.slice(cur + 1).find((x) => !entriesFor(entries, d.date, x).length) || items[cur + 1];
+  if (nx) {
+    const pic = PHOTOS[nx.ex] ? el("img", { src: photoSrc(nx.ex, 0), alt: "" }) : makeFigure(nx.ex, true).svg;
+    stage.append(el("button", { class: "next", type: "button", onclick: () => select(itemKey(d.date, nx)) },
+      el("span", { class: "next-img" }, pic),
+      el("span", { class: "next-txt" }, el("span", { class: "next-lab", text: "Next up" }), el("span", { class: "next-name", text: exName(nx.ex) }), el("span", { class: "next-t", text: targetText(nx) + (nx.rest ? ` · rest ${nx.rest} s` : "") }))));
   }
-  if (!logged.length) acts.append(el("button", { class: "ghost", type: "button", text: openForm === key ? "Cancel" : "Log", onclick: () => { openForm = openForm === key ? null : key; render(); } }));
-  if (acts.childNodes.length) body.append(acts);
-  if (openForm === key) body.append(logForm(d, it));
-  li.append(body);
-  return li;
+  return stage;
 }
 
 function logForm(d, it) {
@@ -237,8 +260,19 @@ async function render() {
   if (!$("view-history").hidden) renderHistory();
 }
 
+function wireKeys() {
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName) || "";
+    if ($("view-today").hidden || /INPUT|TEXTAREA|SELECT/.test(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
+    const d = dayFor(plan, sel); if (!d || d.skipped) return;
+    const keys = dayItems(d).map((it) => itemKey(d.date, it)), i = keys.indexOf(openItem);
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { if (i < keys.length - 1) { e.preventDefault(); select(keys[i + 1]); } }
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { if (i > 0) { e.preventDefault(); select(keys[i - 1]); } }
+  });
+}
+
 async function boot() {
-  wireTabs(); wireHistory();
+  wireTabs(); wireHistory(); wireKeys();
   try { plan = await store.plan(); }
   catch { $("day").append(el("div", { class: "banner", text: "Couldn't load data/plan.json. Serve the folder over http (see README), don't open the file directly." })); return; }
   await refresh();
