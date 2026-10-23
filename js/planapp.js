@@ -2,12 +2,48 @@
 // Push-ups open the camera coach (coach.html), which logs its sets back through the same store.
 import { createLocalStore } from "./store.js";
 import { exName, isTimed, isBodyweight, canCoach, CUES } from "./exercises.js";
+import { PHOTOS, photoSrc, makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
 import { dayKey, planDays, dayFor, dayItems, pickDay, targetText, entryText, entriesFor, logDefaults, dayStatus, progress, logText } from "./plan.js";
 
 const store = createLocalStore();
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 let plan = null, entries = [], done = [], sel = null, openForm = null, msg = "";
+let openItem = undefined;   // item key whose picture is open; undefined = pick the next one to do
+
+// ---------- pictures: one animation loop for whatever figures are on screen ----------
+let ticks = [], raf = 0;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let figMode = "photo";
+try { figMode = localStorage.getItem("bb.figMode") || "photo"; } catch { /* default */ }
+function loop(now) { ticks.forEach((t) => t(now)); raf = ticks.length ? requestAnimationFrame(loop) : 0; }
+function startTicks() { cancelAnimationFrame(raf); raf = 0; if (ticks.length && !reduceMotion) raf = requestAnimationFrame(loop); }
+
+function media(ex) {
+  const host = el("div", { class: "media fig" });
+  const ph = PHOTOS[ex];
+  if (ph && figMode === "photo") {
+    const box = el("div", { class: "photo" });
+    [0, 1].forEach((i) => box.append(el("img", { src: photoSrc(ex, i), alt: `${exName(ex)}, ${ph[i].toLowerCase()}` })));
+    box.append(el("div", { class: "ph-lab", text: ph[0] }), el("div", { class: "ph-lab", text: ph[1] }));
+    host.append(box);
+  } else {
+    const f = makeFigure(ex);
+    host.append(f.svg);
+    if (f.tick) ticks.push(f.tick);
+  }
+  if (ph) host.append(el("button", { class: "fig-toggle", type: "button", text: figMode === "photo" ? "Show drawing" : "Show photo",
+    onclick: (e) => { e.stopPropagation(); figMode = figMode === "photo" ? "draw" : "photo"; try { localStorage.setItem("bb.figMode", figMode); } catch { /* ignore */ } render(); } }));
+  if (BAR_EX[ex]) host.append(gripMap(ex));
+  const yt = el("a", { class: "yt", href: ytUrl(ex, exName(ex)), target: "_blank", rel: "noopener", "aria-label": "Find a demo video on YouTube", title: "Find a demo video" });
+  yt.innerHTML = '<svg viewBox="0 0 26 18" aria-hidden="true"><path fill="#fff" d="M10 3.5v11l9-5.5z"/></svg>';
+  host.append(yt);
+  return host;
+}
+function thumb(ex) {
+  if (PHOTOS[ex]) return el("span", { class: "thumb ph" }, el("img", { src: photoSrc(ex, 0), alt: "", loading: "lazy" }));
+  return el("span", { class: "thumb fig" }, makeFigure(ex, true).svg);
+}
 
 function el(tag, attrs = {}, ...kids) {
   const e = document.createElement(tag);
@@ -37,7 +73,7 @@ function renderWeek() {
     const dt = parse(d.date);
     w.append(el("button", { class: "day", type: "button", "aria-pressed": d.date === sel ? "true" : "false", "data-s": st,
       "data-today": d.date === today ? "1" : null, "data-easy": d.kind === "Easy" ? "1" : null,
-      onclick: () => { sel = d.date; openForm = null; msg = ""; history.replaceState(null, "", "?day=" + d.date); render(); } },
+      onclick: () => { sel = d.date; openForm = null; openItem = undefined; msg = ""; history.replaceState(null, "", "?day=" + d.date); render(); } },
       el("span", { class: "day-dow", text: d.date === today ? "Today" : DOW[dt.getDay()] }),
       el("span", { class: "day-num", text: `${MON[dt.getMonth()]} ${dt.getDate()}` }),
       el("span", { class: "day-flag" }, st === "done" ? TICK() : st === "skipped" ? "SKIP" : d.kind === "Easy" ? "EASY" : st === "started" ? "•" : "")));
@@ -67,6 +103,10 @@ async function renderDay() {
 
   const list = el("ol", { class: "items" });
   const items = dayItems(d);
+  if (openItem === undefined) {
+    const next = items.find((it) => !entriesFor(entries, d.date, it).length);
+    openItem = next ? itemKey(d.date, next) : null;
+  }
   for (let n = 0; n < items.length; n++) list.append(await renderItem(d, items[n], n + 1));
   card.append(list);
 
@@ -84,14 +124,21 @@ async function renderItem(d, it, n) {
   const draft = canCoach(it.ex) ? await store.draft(key) : null;
   const li = el("li", { class: "item", "data-s": logged.length ? "done" : draft ? "started" : "todo" });
   const facts = [targetText(it), it.rest ? `rest ${it.rest} s` : null].filter(Boolean).join(" · ");
-  li.append(el("span", { class: "i-num" }, logged.length ? TICK() : String(n)),
+  const open = openItem === key;
+  li.dataset.open = open ? "1" : "0";
+  const toggle = () => { openItem = open ? null : key; render(); };
+  li.append(el("div", { class: "i-head", role: "button", tabindex: "0", "aria-expanded": open ? "true" : "false",
+      onclick: toggle, onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } } },
+    el("span", { class: "i-num" }, logged.length ? TICK() : String(n)),
     el("div", { class: "i-main" },
       el("div", { class: "i-name", text: exName(it.ex) }),
       el("div", { class: "i-target", text: facts }),
-      it.note ? el("div", { class: "i-note", text: it.note }) : null));
+      it.note ? el("div", { class: "i-note", text: it.note }) : null),
+    open ? null : thumb(it.ex)));
 
   const body = el("div", { class: "i-body" });
-  if (CUES[it.ex]) body.append(el("details", { class: "cues" }, el("summary", { text: "Form cues" }), el("ul", {}, CUES[it.ex].map((c) => el("li", { text: c })))));
+  if (open) body.append(media(it.ex));
+  if (CUES[it.ex]) body.append(el("details", { class: "cues", open: open }, el("summary", { text: "Form cues" }), el("ul", {}, CUES[it.ex].map((c) => el("li", { text: c })))));
   logged.forEach((e) => {
     const extra = e.src === "coach" ? ` · camera coach, form ${e.form}/100` : "";
     body.append(el("div", { class: "logged" }, el("span", { text: "Logged " + entryText(e) + extra }),
@@ -182,8 +229,10 @@ function wireTabs() {
 }
 
 async function render() {
+  ticks = [];
   renderWeek();
   await renderDay();
+  startTicks();
   if (!$("view-progress").hidden) renderProgress();
   if (!$("view-history").hidden) renderHistory();
 }
