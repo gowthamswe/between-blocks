@@ -2,7 +2,7 @@
 // Push-ups open the camera coach (coach.html), which logs its sets back through the same store.
 import { createLocalStore } from "./store.js";
 import { exName, isTimed, isBodyweight, canCoach, CUES } from "./exercises.js";
-import { PHOTOS, photoSrc, makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
+import { makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
 import { dayKey, planDays, dayFor, dayItems, pickDay, targetText, entryText, entriesFor, logDefaults, dayStatus, progress, logText } from "./plan.js";
 
 const store = createLocalStore();
@@ -14,26 +14,15 @@ let openItem = undefined;   // item key whose picture is open; undefined = pick 
 // ---------- pictures: one animation loop for whatever figures are on screen ----------
 let ticks = [], raf = 0;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let figMode = "photo";
-try { figMode = localStorage.getItem("bb.figMode") || "photo"; } catch { /* default */ }
 function loop(now) { ticks.forEach((t) => t(now)); raf = ticks.length ? requestAnimationFrame(loop) : 0; }
 function startTicks() { cancelAnimationFrame(raf); raf = 0; if (ticks.length && !reduceMotion) raf = requestAnimationFrame(loop); }
 
 function media(ex) {
   const host = el("div", { class: "media fig" });
-  const ph = PHOTOS[ex];
-  if (ph && figMode === "photo") {
-    const box = el("div", { class: "photo" });
-    [0, 1].forEach((i) => box.append(el("img", { src: photoSrc(ex, i), alt: `${exName(ex)}, ${ph[i].toLowerCase()}` })));
-    box.append(el("div", { class: "ph-lab", text: ph[0] }), el("div", { class: "ph-lab", text: ph[1] }));
-    host.append(box);
-  } else {
-    const f = makeFigure(ex);
-    host.append(f.svg);
-    if (f.tick) ticks.push(f.tick);
-  }
-  if (ph) host.append(el("button", { class: "fig-toggle", type: "button", text: figMode === "photo" ? "Show drawing" : "Show photo",
-    onclick: (e) => { e.stopPropagation(); figMode = figMode === "photo" ? "draw" : "photo"; try { localStorage.setItem("bb.figMode", figMode); } catch { /* ignore */ } render(); } }));
+  const f = makeFigure(ex);
+  f.svg.setAttribute("role", "img"); f.svg.setAttribute("aria-label", `${exName(ex)}, animated drawing`); f.svg.removeAttribute("aria-hidden");
+  host.append(f.svg);
+  if (f.tick) ticks.push(f.tick);
   if (BAR_EX[ex]) host.append(gripMap(ex));
   const yt = el("a", { class: "yt", href: ytUrl(ex, exName(ex)), target: "_blank", rel: "noopener", "aria-label": "Find a demo video on YouTube", title: "Find a demo video" });
   yt.innerHTML = '<svg viewBox="0 0 26 18" aria-hidden="true"><path fill="#fff" d="M10 3.5v11l9-5.5z"/></svg>';
@@ -173,7 +162,7 @@ async function renderStage(d, items, cur) {
 
   const nx = items.slice(cur + 1).find((x) => !entriesFor(entries, d.date, x).length) || items[cur + 1];
   if (nx) {
-    const pic = PHOTOS[nx.ex] ? el("img", { src: photoSrc(nx.ex, 0), alt: "" }) : makeFigure(nx.ex, true).svg;
+    const pic = makeFigure(nx.ex, true).svg;
     stage.append(el("button", { class: "next", type: "button", onclick: () => select(itemKey(d.date, nx)) },
       el("span", { class: "next-img" }, pic),
       el("span", { class: "next-txt" }, el("span", { class: "next-lab", text: "Next up" }), el("span", { class: "next-name", text: exName(nx.ex) }), el("span", { class: "next-t", text: targetText(nx) + (nx.rest ? ` · rest ${nx.rest} s` : "") }))));

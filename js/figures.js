@@ -1,5 +1,4 @@
-// Exercise pictures, ported from the Between Blocks app: real photos (start/end, crossfading),
-// animated figures for every exercise (side view on the floor, front view on his power tower),
+// Exercise pictures, ported from the Between Blocks app: animated figures for every exercise (side view on the floor, front view on his power tower),
 // a "seen from above" grip map for bar work, and a YouTube demo search.
 // makeFigure(ex, still) returns { svg, tick(now) | null }; the caller runs tick on animation frames.
 
@@ -8,14 +7,6 @@ function sv(name, attrs) { const e = document.createElementNS(SVGNS, name); for 
 function mv(pose, dx, dy, only) { const r = {}; for (const k in pose) r[k] = (!only || only.includes(k)) ? [pose[k][0] + dx, pose[k][1] + dy] : pose[k].slice(); return r; }
 function ov(pose, o) { const r = {}; for (const k in pose) r[k] = pose[k].slice(); for (const j in o) r[j] = o[j]; return r; }
 const F = (base, o) => ({ ...base, ...o });
-
-/* real photos (Free Exercise DB, public domain), keyed by exercise: [start, end] labels */
-export const PHOTOS = {
-  pushup: ["Top", "Bottom"], pushup_he: ["Top", "Bottom"], bw_squat: ["Stand", "Bottom"], goblet: ["Stand", "Bottom"],
-  db_curl: ["Arms long", "Curled"], db_ohp: ["At shoulders", "Overhead"], db_rdl: ["Stand", "Hinged"], db_row: ["Arm long", "Pulled"],
-  glute_br: ["Down", "Hips up"], knee_raise: ["Hang", "Knees up"], pullup: ["Hang", "Top"], pullup_b: ["Hang", "Top"], scap_pull: ["Hang", "Shoulders down"],
-};
-export const photoSrc = (ex, i) => `photos/${ex.replace(/_/g, "-")}-${i}.jpg`;
 
 /* which drawing each exercise uses, and what to search for on YouTube */
 const FIG_OF = { hang: "hang", scap_pull: "scap", pullup_neg: "neg", pullup_b: "pullup_b", pullup: "pullup", knee_raise: "knee",
