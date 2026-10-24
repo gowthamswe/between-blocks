@@ -11,7 +11,7 @@ Everything runs on your device. No video is recorded or uploaded.
 - `data/plan.json` is the plan, copied from the Between Blocks artifact on 2026-10-23 (10 days, Oct 14–23). Claude writes this file; the app only reads it.
 - `data/history.json` is the log exported from Between Blocks (73 entries, 10 finished sessions). The app copies it into the browser once, on first open.
 - Everything you log after that is saved **in this browser only** (localStorage, keys `bb.*`). It isn't synced to other devices or back to the Between Blocks artifact.
-- **Push-ups:** tap *Coach with camera*. The coach takes the plan's target (e.g. 3 × 8), counts sets 1 of 3, runs the rest timer, and keeps finished sets if the page reloads. *Save to plan* logs all sets with the form score and takes you back.
+- **Push-ups, squats, glute bridges, RDLs:** tap *Coach* (under the set tiles). The coach takes the plan's target (e.g. 3 × 8), counts sets 1 of 3, runs the rest timer, and keeps finished sets if the page reloads. *Save to plan* logs all sets with the form score and takes you back.
 - **History → Copy last 14 days for Claude** gives Claude a plain-text log to plan the next days. **Download all progress** saves a JSON with the plan, every entry and the finished sessions. That file is what moves into shared storage later.
 
 ### Syncing to Between Blocks (stopgap)

@@ -187,15 +187,15 @@ async function renderStage(d, items, cur, draft) {
   stage.append(el("div", { class: "st-head" },
     el("div", { class: "st-titles" }, el("span", { class: "st-step", text: `${cur + 1} of ${items.length}` }), el("h2", { class: "st-name", text: exName(it.ex) }),
       it.note ? el("p", { class: "st-note", text: it.note[0].toUpperCase() + it.note.slice(1) }) : null),
-    tiles(d, it, draft, logged)));
+    el("div", { class: "st-side" }, tiles(d, it, draft, logged),
+      canCoach(it.ex) && !logged.length ? el("a", { class: "play-btn coach-btn", href: "coach.html?" + new URLSearchParams({ day: d.date, block: it.block, item: it.idx }), text: "Coach" }) : null)));
 
   const acts = el("div", { class: "ctrls" });
   acts.append(el("button", { class: "ic-btn", type: "button", "aria-label": "Previous exercise", disabled: cur === 0, onclick: () => select(itemKey(d.date, items[cur - 1])), text: "←" }));
   if (!logged.length) {
     const n = pr.done + 1;
     if (canCoach(it.ex)) {
-      const q = new URLSearchParams({ day: d.date, block: it.block, item: it.idx });
-      acts.append(el("a", { class: "play-btn", href: "coach.html?" + q, text: pr.done ? `Coach · set ${n} of ${pr.total}` : "Coach with camera" }));
+      // the Coach button sits under the tiles
     } else if (isTimed(it.ex)) {
       acts.append(draft && draft.holdStart
         ? el("button", { class: "play-btn", type: "button", text: `✓ Hold done · set ${n}`, onclick: () => finishSet(d, it, draft) })

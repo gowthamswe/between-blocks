@@ -169,6 +169,8 @@
 .st-titles { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .st-titles .st-step { margin-top: 0; }
 .st-titles .st-note { margin: 0; }
+.st-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.coach-btn { height: 46px; padding: 0 22px; font-size: .98rem; }
 .tiles { flex: none; display: grid; grid-template-columns: repeat(3, minmax(92px, auto)); gap: 8px; }
 .tile { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; min-height: 104px; padding: 12px 14px 10px;
   border-radius: 16px; background: var(--raised); border: 1px solid var(--line-strong); }
@@ -197,6 +199,8 @@ button.bar[data-s="done"]:hover { opacity: .7; }
 }
 @media (max-width: 1100px) {
   .st-head { flex-direction: column; align-items: stretch; }
+  .st-side { align-items: stretch; }
+  .st-side .coach-btn { align-self: flex-end; }
   .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
