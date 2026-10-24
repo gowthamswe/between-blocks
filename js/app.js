@@ -2,10 +2,11 @@
 // The exercise comes from the plan item (coach.html?day=…&block=…&item=…) or ?move=pushup|squat|goblet.
 import { createCoach, summarize } from "./coach.js";
 import { MOVES, moveFor } from "./moves.js";
+import { unlock as unlockBeeps, beep, restBeep } from "./beep.js";
 import { createVoice } from "./voice.js";
 import { createPose, isPhone } from "./pose.js";
 import { createLocalStore } from "./store.js";
-import { findItem, targetText, coachSet, coachEntry, lastEntry } from "./plan.js";
+import { findItem, itemKey, targetText, coachSet, coachEntry, lastEntry, restKey, restAfter } from "./plan.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -269,7 +270,7 @@ async function keepAwake(on) {
 document.addEventListener("visibilitychange", () => { if (running && document.visibilityState === "visible") keepAwake(true); });
 
 function startSet() {
-  voice.unlock();
+  voice.unlock(); unlockBeeps();
   $("panel-summary").hidden = true; $("hud").hidden = false; setState("live");
   running = true; reps = []; lastValidT = null; setStartT = performance.now();
   analyzer.reset();
@@ -282,6 +283,7 @@ function startSet() {
 }
 
 function endSet() {
+  unlockBeeps();   // the rest that starts now beeps at the end
   running = false;
   const b = $("btn-set"); b.textContent = "Start set"; b.dataset.running = "0";
   voice.say(coach.onEnd(reps.length));
@@ -303,8 +305,10 @@ function renderPlanLabel() {
 
 function startRest(secs) {
   clearInterval(restTimer);
-  const r = $("rest"), end = Date.now() + secs * 1000;
+  const r = $("rest"), end = Date.now() + secs * 1000, beeped = new Set();
   const tick = () => {
+    const b = restBeep(end);
+    if (b && !beeped.has(b.key)) { beeped.add(b.key); beep(b.long); }
     const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
     r.textContent = left ? `Rest ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "Rest done. Ready for the next set.";
     if (!left) clearInterval(restTimer);
@@ -316,6 +320,9 @@ async function saveToPlan() {
   if (!ctx || !ctx.sets.length) return;
   await progressStore.addEntry(coachEntry(ctx.sets, { day: ctx.day.date, item: ctx.item, w: move.weighted ? weight : 0 }));
   await progressStore.clearDraft(ctx.key);
+  // the rest after the last set keeps counting on the plan screen
+  const rest = restAfter(ctx.item);
+  if (rest) await progressStore.saveDraft(restKey(ctx.day.date), rest);
   location.href = "./?day=" + ctx.day.date;
 }
 
@@ -415,7 +422,7 @@ async function loadPlanContext() {
     if (!found || !moveFor(found.item.ex)) return;
     move = moveFor(found.item.ex); analyzer = move.create(found.item);
     if (move.weighted) { const last = lastEntry(await progressStore.entries(), found.item.ex, found.day.date); weight = (last && last.w) || 0; }
-    const key = `${found.day.date}.${found.item.block}.${found.item.idx}`;
+    const key = itemKey(found.day.date, found.item);
     const draft = await progressStore.draft(key);
     ctx = { day: found.day, item: found.item, key, sets: (draft && draft.sets) || [] };
   } catch { return; }

@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 data/progress.json
 data/progress.json.tmp
+data/progress.json.*.tmp

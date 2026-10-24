@@ -25,10 +25,18 @@ async function saveProgress(req, res) {
   try { data = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { res.writeHead(400).end("bad json"); return; }
   if (!data || !Array.isArray(data.entries) || !Array.isArray(data.done)) { res.writeHead(400).end("need entries and done"); return; }
   const out = { saved: new Date().toISOString(), seeded: data.seeded || null, entries: data.entries, done: data.done };
-  await writeFile(PROGRESS + ".tmp", JSON.stringify(out, null, 1));
-  await rename(PROGRESS + ".tmp", PROGRESS);
+  // One write at a time, in arrival order, each through its own temp file: the app can send two
+  // saves a moment apart (an edit removes then adds), and a shared temp file made the second rename fail.
+  const write = writes.then(async () => {
+    const tmp = `${PROGRESS}.${process.pid}.${++writeSeq}.tmp`;
+    await writeFile(tmp, JSON.stringify(out, null, 1));
+    await rename(tmp, PROGRESS);
+  });
+  writes = write.catch(() => {});
+  await write;
   res.writeHead(204).end();
 }
+let writes = Promise.resolve(), writeSeq = 0;
 
 async function serveFile(req, res) {
   let path = decodeURIComponent(new URL(req.url, "http://x").pathname);

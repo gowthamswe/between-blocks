@@ -9,10 +9,10 @@ function ov(pose, o) { const r = {}; for (const k in pose) r[k] = pose[k].slice(
 const F = (base, o) => ({ ...base, ...o });
 
 /* which drawing each exercise uses, and what to search for on YouTube */
-const FIG_OF = { hang: "hang", scap_pull: "scap", pullup_neg: "neg", pullup_b: "pullup_b", pullup: "pullup", knee_raise: "knee",
+const FIG_OF = { arm_circles: "circles", hang: "hang", scap_pull: "scap", pullup_neg: "neg", pullup_b: "pullup_b", pullup: "pullup", knee_raise: "knee",
   pushup: "pushup", pushup_he: "pushup", bw_squat: "squat", goblet: "goblet", glute_br: "bridge", sl_bridge: "bridge", hollow: "hollow",
   db_curl: "curl", db_ohp: "ohp", db_row: "row", db_rdl: "rdl", farmer: "carry" };
-const YT = { hang: "dead hang beginner form", scap_pull: "scapular pull up beginner", pullup_neg: "pull up negatives beginner",
+const YT = { arm_circles: "arm circles shoulder warm up", hang: "dead hang beginner form", scap_pull: "scapular pull up beginner", pullup_neg: "pull up negatives beginner",
   pullup_b: "band assisted pull up form", pullup: "neutral grip pull up form", knee_raise: "hanging knee raise beginner form",
   pushup: "push up proper form beginner", pushup_he: "incline push up form", bw_squat: "bodyweight squat proper form",
   goblet: "goblet squat dumbbell form", glute_br: "glute bridge proper form", sl_bridge: "single leg glute bridge form",
@@ -282,7 +282,49 @@ function makeSide(f, still) {
   return { svg, tick: (now) => { const t = (now % f.period) / f.period; draw(at(t), phaseAt(t)); } };
 }
 
+/* arm circles, from the front: standing tall, arms straight out at shoulder height, each hand tracing a circle
+   that grows from small to big; forwards for the first half, backwards for the second. */
+function makeArmCircles(still) {
+  const svg = sv("svg", { viewBox: "0 0 240 228", "aria-hidden": "true" });
+  const FLOORY = 214, SY = 74, ARM = 78;
+  const S = [[98, SY], [142, SY]], dir = [-1, 1];
+  svg.appendChild(sv("ellipse", { cx: 120, cy: FLOORY + 4, rx: 70, ry: 5, class: "shadow" }));
+  svg.appendChild(sv("line", { x1: 20, y1: FLOORY, x2: 220, y2: FLOORY, "stroke-width": 3, class: "prop" }));
+  const rings = S.map((p, i) => sv("ellipse", { cx: p[0] + dir[i] * ARM, cy: SY, rx: 9, ry: 14, class: "guide", fill: "none", "stroke-width": 1.6, "stroke-dasharray": "3 4" }));
+  rings.forEach((r) => svg.appendChild(r));
+  const g = sv("g", { class: "figure" });
+  const seg = (x1, y1, x2, y2, w, cls = "") => { const l = sv("line", { x1, y1, x2, y2, "stroke-width": w, class: "seg " + cls }); g.appendChild(l); return l; };
+  seg(108, 132, 106, 172, 16); seg(106, 172, 106, FLOORY - 6, 12); seg(106, FLOORY - 6, 96, FLOORY - 2, 8);       // legs
+  seg(132, 132, 134, 172, 16); seg(134, 172, 134, FLOORY - 6, 12); seg(134, FLOORY - 6, 144, FLOORY - 2, 8);
+  g.appendChild(sv("polygon", { points: `${S[0][0]},${SY - 2} ${S[1][0]},${SY - 2} 136,134 104,134`, class: "torso-fill", "stroke-width": 8, "stroke-linejoin": "round" }));
+  seg(120, 50, 120, SY - 4, 10);
+  g.appendChild(sv("circle", { cx: 120, cy: 40, r: 14, class: "headc" }));
+  const arms = S.map((p) => seg(p[0], p[1], p[0], p[1], 11));
+  const hands = S.map(() => { const c = sv("circle", { r: 6.5, class: "hand" }); g.appendChild(c); return c; });
+  svg.appendChild(g);
+  const phase = sv("text", { x: 120, y: 18, class: "phase", "text-anchor": "middle" });
+  if (!still) svg.appendChild(phase);
+  function place(angle, r) {
+    S.forEach((p, i) => {
+      const cx = p[0] + dir[i] * ARM, x = cx + dir[i] * Math.cos(angle) * r * 0.65, y = SY + Math.sin(angle) * r;
+      arms[i].setAttribute("x2", x.toFixed(1)); arms[i].setAttribute("y2", y.toFixed(1));
+      hands[i].setAttribute("cx", x.toFixed(1)); hands[i].setAttribute("cy", y.toFixed(1));
+      rings[i].setAttribute("rx", (r * 0.65).toFixed(1)); rings[i].setAttribute("ry", r.toFixed(1));
+    });
+  }
+  if (still) { place(-Math.PI / 2, 12); return { svg, tick: null }; }
+  place(-Math.PI / 2, 10); phase.textContent = "Forwards · small circles";   // first frame (and the still pose with reduced motion)
+  const PERIOD = 8000, SPIN = 900;   // 4 s each way; one circle every 0.9 s
+  return { svg, tick: (now) => {
+    const t = (now % PERIOD) / PERIOD, half = t < 0.5, u = half ? t * 2 : (t - 0.5) * 2;
+    const r = 5 + 11 * u, spin = ((now % SPIN) / SPIN) * Math.PI * 2;
+    place(half ? -spin : spin, r);
+    phase.textContent = (half ? "Forwards" : "Backwards") + (u < 0.5 ? " · small circles" : " · bigger");
+  } };
+}
+
 export function makeFigure(ex, still = false) {
+  if (FIG_OF[ex] === "circles") return makeArmCircles(still);
   const f = FIGS[FIG_OF[ex]];
   if (!f) { const svg = sv("svg", { viewBox: "0 0 200 200", "aria-hidden": "true" }); return { svg, tick: null }; }
   return f.front ? makeFront(f, still) : makeSide(f, still);

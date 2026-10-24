@@ -424,8 +424,15 @@
     {
      "items": [
       {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up: 30 s forwards, then 30 s backwards"
+      },
+      {
        "ex": "hang",
-       "note": "warm-up, after 1 min of arm circles",
+       "note": "warm-up for the bar",
        "rest": 60,
        "secs": 20,
        "sets": 2
@@ -487,5 +494,5 @@
   }
  ],
  "from": "2026-10-14",
- "updated": "2026-10-16"
+ "updated": "2026-10-23"
 }

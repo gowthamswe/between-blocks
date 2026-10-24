@@ -24,7 +24,16 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
   mirror = onLocalhost() ? defaultMirror : null } = {}) {
   const get = (k, d) => { try { const v = storage.getItem(P + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
   const set = (k, v) => { storage.setItem(P + k, JSON.stringify(v)); };
-  const push = () => { if (mirror) mirror({ seeded: get("seeded", null), entries: get("entries", []), done: get("done", []) }).catch(() => {}); };
+  // One save in flight at a time, always the latest state, so an older save can't land after a newer one.
+  let sending = false, again = false;
+  const push = async () => {
+    if (!mirror) return;
+    if (sending) { again = true; return; }
+    sending = true;
+    try {
+      do { again = false; await mirror({ seeded: get("seeded", null), entries: get("entries", []), done: get("done", []) }).catch(() => {}); } while (again);
+    } finally { sending = false; }
+  };
   let planCache = null;
 
   async function seed() {
@@ -40,7 +49,8 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
     set("entries", entries); set("done", done);
     set("seeded", { at: Date.now(), from: (hist && hist.exported) || null, count: entries.length });
   }
-  const ready = seed().then(push);   // also sends what's already here when the page opens
+  const ready = seed();
+  ready.then(() => push());   // send what's already here when the page opens, without making anything wait for it
 
   const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 

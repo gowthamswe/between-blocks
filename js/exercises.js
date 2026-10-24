@@ -1,8 +1,9 @@
 // Exercise names and form cues, copied from the Between Blocks app so the plan reads the same.
-// `bw`: bodyweight (no weight field). `timed`: the target is seconds, logged as reps.
+// `bw`: bodyweight (no weight field). `timed`: the target is seconds, logged as reps. `hold`: timed and held still.
 // `coach`: the camera coach can run this exercise (push-ups, squats, glute bridges, Romanian deadlifts; see js/moves.js).
 
 export const EXERCISES = {
+  arm_circles: { name: "Arm circles", group: "warmup", bw: true, timed: true },
   pushup_he:  { name: "Push-up, hands elevated", group: "push", bw: true },
   pushup:     { name: "Push-up", group: "push", bw: true, coach: true },
   pushup_fe:  { name: "Push-up, feet elevated", group: "push", bw: true },
@@ -11,7 +12,7 @@ export const EXERCISES = {
   db_incl:    { name: "DB incline press", group: "push" },
   db_ohp:     { name: "Overhead press", group: "push" },
   pushdown:   { name: "Tricep pushdown", group: "push" },
-  hang:       { name: "Dead hang", group: "pull", bw: true, timed: true },
+  hang:       { name: "Dead hang", group: "pull", bw: true, timed: true, hold: true },
   scap_pull:  { name: "Scapular pull", group: "pull", bw: true },
   pullup_neg: { name: "Pull-up negative", group: "pull", bw: true },
   pullup_b:   { name: "Band pull-up", group: "pull", bw: true },
@@ -32,14 +33,15 @@ export const EXERCISES = {
   db_rdl:     { name: "Romanian deadlift", group: "hinge", coach: true },
   kb_swing:   { name: "Kettlebell swing", group: "hinge" },
   nordic:     { name: "Nordic curl", group: "hinge", bw: true },
-  hollow:     { name: "Hollow hold", group: "core", bw: true, timed: true },
+  hollow:     { name: "Hollow hold", group: "core", bw: true, timed: true, hold: true },
   knee_raise: { name: "Hanging knee raise", group: "core", bw: true },
   ab_wheel:   { name: "Ab wheel", group: "core", bw: true },
-  plank:      { name: "Plank", group: "core", bw: true, timed: true },
+  plank:      { name: "Plank", group: "core", bw: true, timed: true, hold: true },
   farmer:     { name: "Farmer's walk", group: "carry", timed: true },
 };
 
 export const CUES = {
+  arm_circles: ["Stand tall, arms straight out at shoulder height", "Small circles first, growing bigger", "30 seconds forwards, then 30 seconds backwards"],
   hang:       ["Neutral grips, arms fully straight", "Squeeze the handles, keep your legs still", "Step down before your grip gives out"],
   scap_pull:  ["Hang with straight arms", "Pull your shoulder blades down, elbows stay straight", "You rise 2–3 inches; lower slowly"],
   pullup_neg: ["Step up so your chin is over the bar", "Lower as slowly as you can, about 5 seconds", "Step back up. Never jump into it"],
@@ -62,5 +64,6 @@ export const CUES = {
 
 export const exName = (k) => (EXERCISES[k] && EXERCISES[k].name) || k;
 export const isTimed = (k) => !!(EXERCISES[k] && EXERCISES[k].timed);
+export const isHold = (k) => !!(EXERCISES[k] && EXERCISES[k].hold);   // timed and held still (vs. timed movement like arm circles)
 export const isBodyweight = (k) => !!(EXERCISES[k] && EXERCISES[k].bw);
 export const canCoach = (k) => !!(EXERCISES[k] && EXERCISES[k].coach);

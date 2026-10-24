@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dayFor, dayItems, findItem, pickDay, targetText, entryText, entriesFor, logDefaults, dayStatus, coachSet, coachEntry, progress, logText } from "../js/plan.js";
-import { setProgress, tickSet, undoSet, manualEntry, timerState } from "../js/plan.js";
+import { itemKey } from "../js/plan.js";
+import { setProgress, tickSet, undoSet, entryFromSets, timerState, nextReps, adjustReps, setsFromEntry, holdState, startHold, heldSecs, HOLD_LEAD_MS, beepFor } from "../js/plan.js";
 import { createLocalStore } from "../js/store.js";
 import { EXERCISES } from "../js/exercises.js";
 
@@ -40,10 +41,10 @@ test("opens today, else the next planned day, else the last", () => {
 });
 
 test("finds an item from a coach link", () => {
-  const f = findItem(plan, "2026-10-23", 0, 4);
+  const f = findItem(plan, "2026-10-23", 0, 5);
   assert.equal(f.item.ex, "pushup");
   assert.equal(f.item.reps, 8);
-  assert.equal(findItem(plan, "2026-10-23", 0, 99), null);
+  assert.equal(findItem(plan, "2026-10-23", 0, 100), null);
   assert.equal(findItem(plan, "2030-01-01", 0, 0), null);
 });
 
@@ -68,10 +69,10 @@ test("coach sets become one entry: lowest set as reps, detail kept", () => {
   const s1 = coachSet([r(100), r(100), r(80, ["sag"])]);
   const s2 = coachSet([r(90), r(70, ["shallow"])]);
   assert.equal(s1.reps, 3); assert.deepEqual(s1.faults, { sag: 1 }); assert.equal(s1.lowerS, 2);
-  const { item } = findItem(plan, "2026-10-23", 0, 4);
+  const { item } = findItem(plan, "2026-10-23", 0, 5);
   const e = coachEntry([s1, s2], { day: "2026-10-23", item, ts: 1 });
   assert.deepEqual({ ex: e.ex, sets: e.sets, reps: e.reps, perSet: e.perSet, item: e.item, src: e.src, form: e.form, faults: e.faults },
-    { ex: "pushup", sets: 2, reps: 2, perSet: [3, 2], item: 4, src: "coach", form: 88, faults: { sag: 1, shallow: 1 } });
+    { ex: "pushup", sets: 2, reps: 2, perSet: [3, 2], item: 5, src: "coach", form: 88, faults: { sag: 1, shallow: 1 } });
   assert.equal(entryText(e), "2 sets: 3, 2");
   assert.equal(entryText({ ...e, perSet: [8, 8, 8], sets: 3, reps: 8 }), "3 × 8");
   assert.equal(entriesFor([e], "2026-10-23", item).length, 1);
@@ -89,7 +90,7 @@ test("progress shows the trail and the trend", () => {
 });
 
 test("log text for Claude includes the coach's form details", () => {
-  const { item } = findItem(plan, "2026-10-23", 0, 4);
+  const { item } = findItem(plan, "2026-10-23", 0, 5);
   const e = coachEntry([coachSet([{ score: 90, faults: ["sag"], lowerMs: 1900, minElbow: 91 }])], { day: "2026-10-23", item, ts: 2 });
   const t = logText([...hist.entries, e], hist.done, { since: "2026-10-20" });
   assert.match(t, /^2026-10-20 · session done, 33 min/);
@@ -139,45 +140,195 @@ test("a missing history export starts empty instead of failing", async () => {
 });
 
 test("sets fill one at a time, rest starts between sets, the last set logs the exercise", () => {
-  const { item } = findItem(plan, "2026-10-23", 0, 3);            // band pull-up 3 × 5, rest 90
+  const { item } = findItem(plan, "2026-10-23", 0, 4);            // band pull-up 3 × 5, rest 90
   assert.deepEqual(setProgress(item, null), { done: 0, total: 3, logged: false });
   let r = tickSet(item, null, { now: 1000 });
   assert.equal(r.complete, false);
-  assert.deepEqual(r.draft, { manual: 1, held: [], restEnd: 91000, holdStart: null });
+  assert.deepEqual(r.draft, { sets: [{ reps: 5, ts: 1000, manual: true }], restEnd: 91000, holdStart: null });
   assert.equal(setProgress(item, r.draft).done, 1);
   r = tickSet(item, r.draft, { now: 200000 });
   assert.equal(setProgress(item, r.draft).done, 2);
-  assert.deepEqual(setProgress(item, undoSet(r.draft)), { done: 1, total: 3, logged: false });
-  assert.equal(undoSet({ manual: 1 }), null);
-  r = tickSet(item, r.draft);
+  assert.equal(setProgress(item, undoSet(r.draft)).done, 1);
+  assert.equal(undoSet({ sets: [{ reps: 5, manual: true }] }), null);
+  r = tickSet(item, r.draft, { now: 300000 });
   assert.equal(r.complete, true); assert.equal(r.draft, null);
-  const e = manualEntry(item, r, { day: "2026-10-23", ts: 5 });
-  assert.deepEqual(e, { ex: "pullup_b", sets: 3, reps: 5, w: 0, ts: 5, day: "2026-10-23", block: 0, item: 3, src: "sets" });
+  const e = entryFromSets(item, r.sets, { day: "2026-10-23", ts: 5 });
+  assert.deepEqual(e, { ex: "pullup_b", sets: 3, reps: 5, w: 0, ts: 5, day: "2026-10-23", block: 0, item: 4, src: "sets" });
   assert.deepEqual(setProgress(item, null, [e]), { done: 3, total: 3, logged: true });
   assert.equal(entriesFor([e], "2026-10-23", item).length, 1);
 });
 
+test("the arrows change reps for the set you're on; each set keeps its own reps", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 2);            // scapular pull 2 × 6
+  assert.equal(nextReps(item, null), 6);
+  let dr = adjustReps(item, null, -1); dr = adjustReps(item, dr, -1);
+  assert.equal(nextReps(item, dr), 4);
+  assert.equal(adjustReps(item, dr, 2).next, undefined, "back at the plan's number");
+  assert.equal(nextReps(item, adjustReps(item, { next: 0 }, -1)), 0, "never below 0");
+  const r1 = tickSet(item, { sets: [], next: 7 }, { now: 1 });     // went one over
+  assert.equal(r1.draft.next, undefined, "next set starts at the plan's reps again");
+  const r2 = tickSet(item, adjustReps(item, r1.draft, -2), { now: 2 });
+  assert.equal(r2.complete, true);
+  const e = entryFromSets(item, r2.sets, { day: "2026-10-23", ts: 3 });
+  assert.deepEqual([e.sets, e.reps, e.perSet], [2, 4, [7, 4]]);
+  assert.equal(entryText(e), "2 sets: 7, 4");
+});
+
 test("timed holds log the shortest hold", () => {
-  const { item } = findItem(plan, "2026-10-23", 0, 0);            // dead hang 2 × 20 s
-  const r1 = tickSet(item, { manual: 0, held: [], holdStart: 1 }, { held: 22.4 });
+  const { item } = findItem(plan, "2026-10-23", 0, 1);            // dead hang 2 × 20 s
+  const r1 = tickSet(item, { sets: [], holdStart: 1 }, { held: 22.4 });
   const r2 = tickSet(item, r1.draft, { held: 19.6 });
   assert.equal(r2.complete, true);
-  const e = manualEntry(item, r2, { day: "2026-10-23", ts: 1 });
+  const e = entryFromSets(item, r2.sets, { day: "2026-10-23", ts: 1 });
   assert.equal(e.reps, 20); assert.deepEqual(e.perSet, [22, 20]);
   assert.equal(entryText(e), "2 sets: 22, 20 s");
 });
 
-test("camera coach sets fill the bars too", () => {
+test("camera and hand-ticked sets mix: form comes from the camera sets only", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 5);            // push-up 3 × 8
+  const cam = coachSet([{ score: 90, faults: ["sag"], lowerMs: 2000, minElbow: 90 }, { score: 100, faults: [], lowerMs: 2000, minElbow: 90 }]);
+  const r = tickSet(item, tickSet(item, { sets: [cam] }).draft);
+  assert.equal(r.complete, true);
+  const e = entryFromSets(item, r.sets, { day: "2026-10-23", ts: 1 });
+  assert.equal(e.src, "coach"); assert.deepEqual(e.perSet, [2, 8, 8]); assert.equal(e.form, 95); assert.equal(e.lowerS, 2); assert.deepEqual(e.faults, { sag: 1 });
+});
+
+test("drafts saved as a count (before sets were a list) still work", () => {
   const { item } = findItem(plan, "2026-10-23", 0, 4);
+  assert.equal(setProgress(item, { manual: 2 }).done, 2);
+  const r = tickSet(item, { manual: 2 });
+  assert.equal(r.complete, true);
+  assert.deepEqual(r.sets.map((x) => x.reps), [5, 5, 5]);
+});
+
+test("camera coach sets fill the bars too", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 5);
   assert.deepEqual(setProgress(item, { sets: [{ reps: 8 }, { reps: 7 }] }), { done: 2, total: 3, logged: false });
 });
 
-test("the timer tile shows rest, then go, or a running hold", () => {
-  const { item } = findItem(plan, "2026-10-23", 0, 3);
+test("the timer tile shows rest, then go", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 4);
   assert.deepEqual(timerState(item, null), { mode: "idle", text: "1:30", label: "rest", tone: "idle" });
   assert.deepEqual(timerState(item, { restEnd: 100000 }, 28000), { mode: "rest", text: "1:12", label: "rest", tone: "rest" });
   assert.equal(timerState(item, { restEnd: 100000 }, 100500).text, "Go");
-  const hang = findItem(plan, "2026-10-23", 0, 0).item;
-  assert.deepEqual(timerState(hang, { holdStart: 1000 }, 13300), { mode: "hold", text: "12s", label: "hold · goal 20s", tone: "live" });
-  assert.equal(timerState(hang, { holdStart: 1000 }, 21000).tone, "go");
+  const hang = findItem(plan, "2026-10-23", 0, 1).item;
+  assert.equal(timerState(hang, startHold(null, 0), 3000).mode, "idle", "a hold doesn't take over the rest tile");
+});
+
+test("timed holds: 5 s to get ready, then the middle tile counts the hold down to 0", () => {
+  const hang = findItem(plan, "2026-10-23", 0, 1).item;          // 20 s
+  const dr = startHold({ sets: [{ reps: 21, manual: true }] }, 1000);
+  assert.equal(dr.holdStart, 1000 + HOLD_LEAD_MS); assert.equal(dr.sets.length, 1);
+  assert.equal(holdState(hang, null), null);
+  assert.deepEqual(holdState(hang, dr, 1000), { mode: "ready", text: "5", label: "get ready", tone: "ready" });
+  assert.equal(holdState(hang, dr, 5500).text, "1");
+  assert.deepEqual(holdState(hang, dr, 6000), { mode: "hold", text: "20", label: "sec left", tone: "live", held: 0 });
+  assert.equal(holdState(hang, dr, 6000 + 12400).text, "8");
+  assert.deepEqual(holdState(hang, dr, 6000 + 20000), { mode: "over", text: "0", label: "time! tap done", tone: "go", held: 20 });
+  assert.deepEqual(holdState(hang, dr, 6000 + 23200), { mode: "over", text: "0", label: "time! tap done", tone: "go", held: 20 }, "stays at 0");
+  assert.equal(heldSecs(dr, 6000 + 23200, hang.secs), 20, "logged time is capped at the goal");
+  assert.equal(heldSecs(dr, 4000), 0, "Done during the lead-in holds nothing");
+  assert.equal(heldSecs(dr, 6000 + 17000), 17);
+  const r = tickSet(hang, dr, { held: heldSecs(dr, 6000 + 17000) });
+  assert.equal(r.complete, true); assert.deepEqual(r.sets.map((x) => x.reps), [21, 17]);
+});
+
+test("the mirror sends one save at a time and finishes on the latest state", async () => {
+  const sent = []; let release;
+  const mirror = (data) => { sent.push(data.entries.length); return new Promise((r) => { release = r; }); };
+  const s = createLocalStore({ storage: memStorage(), fetchJson: fetchData, mirror });
+  await new Promise((r) => setTimeout(r, 0));                         // seeding sends the first save
+  const adds = [s.addEntry({ ex: "pushup", sets: 1, reps: 1 }), s.addEntry({ ex: "pushup", sets: 1, reps: 2 }), s.addEntry({ ex: "pushup", sets: 1, reps: 3 })];
+  await Promise.all(adds);
+  assert.deepEqual(sent, [73], "nothing else is sent while the first save is in flight");
+  release(); await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(sent, [73, 76], "then one save with everything");
+  release(); await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(sent, [73, 76]);
+});
+
+test("a logged result turns back into sets, so the last one can be undone", () => {
+  assert.deepEqual(setsFromEntry({ sets: 2, reps: 4, perSet: [7, 4] }).map((x) => x.reps), [7, 4]);
+  assert.deepEqual(setsFromEntry({ sets: 3, reps: 6 }).map((x) => x.reps), [6, 6, 6]);
+  const back = undoSet({ sets: setsFromEntry({ sets: 2, reps: 6 }) });
+  const { item } = findItem(plan, "2026-10-23", 0, 2);
+  assert.deepEqual(setProgress(item, back), { done: 1, total: 2, logged: false });
+  assert.equal(undoSet({ sets: setsFromEntry({ sets: 1, reps: 6 }) }), null);
+});
+
+test("today starts with an explicit warm-up", () => {
+  const items = dayItems(dayFor(plan, "2026-10-23"));
+  assert.equal(items[0].ex, "arm_circles"); assert.equal(targetText(items[0]), "1 × 60 s"); assert.equal(items[0].rest, 0);
+  assert.equal(items[1].ex, "hang"); assert.equal(items[1].note, "warm-up for the bar");
+  assert.equal(EXERCISES.arm_circles.name, "Arm circles");
+});
+
+test("results stay with their exercise when an item is added above them", () => {
+  const before = { blocks: [{ items: [{ ex: "hang", sets: 2, secs: 20 }, { ex: "scap_pull", sets: 2, reps: 6 }] }] };
+  const after = { blocks: [{ items: [{ ex: "arm_circles", sets: 1, secs: 60 }, ...before.blocks[0].items] }] };
+  const scapBefore = dayItems(before)[1], scapAfter = dayItems(after)[2];
+  const logged = [{ ex: "scap_pull", sets: 2, reps: 6, day: "D", block: 0, item: scapBefore.idx }];
+  assert.equal(entriesFor(logged, "D", scapAfter).length, 1);
+  assert.equal(itemKey("D", scapBefore), itemKey("D", scapAfter), "in-progress sets keep the same key");
+  assert.equal(itemKey("D", scapAfter), "D.scap_pull");
+});
+
+test("an exercise twice in one day is told apart by position", () => {
+  const day = { blocks: [{ items: [{ ex: "bw_squat", sets: 1, reps: 10 }, { ex: "goblet", sets: 3, reps: 12 }, { ex: "bw_squat", sets: 3, reps: 15 }] }] };
+  const [warm, , main] = dayItems(day);
+  assert.ok(warm.dup && main.dup);
+  assert.notEqual(itemKey("D", warm), itemKey("D", main));
+  const logged = [{ ex: "bw_squat", sets: 3, reps: 15, day: "D", block: 0, item: 2 }];
+  assert.equal(entriesFor(logged, "D", warm).length, 0);
+  assert.equal(entriesFor(logged, "D", main).length, 1);
+});
+
+test("beeps: 3-2-1 in the get-ready and at the end of the hold, a long one at go and at time's up", () => {
+  const hang = findItem(plan, "2026-10-23", 0, 1).item;          // 20 s
+  const dr = startHold(null, 0), at = (ms) => beepFor(holdState(hang, dr, ms));
+  const timeline = [];
+  for (let ms = 0; ms <= 5000 + 21000; ms += 250) { const b = at(ms); if (b && !timeline.some((x) => x.key === b.key)) timeline.push(b); }
+  assert.deepEqual(timeline.map((b) => b.key + (b.long ? "!" : "")), ["ready:3", "ready:2", "ready:1", "go!", "hold:3", "hold:2", "hold:1", "end!"]);
+  assert.equal(at(500), null, "5 and 4 are silent");
+  assert.equal(beepFor(null), null);
+});
+
+test("rest beeps: 3-2-1 then a long one at 0, once each; an old finished rest stays quiet", async () => {
+  const { restBeep } = await import("../js/beep.js");
+  const end = 100000, keys = [];
+  for (let t = end - 6000; t <= end + 3000; t += 250) { const b = restBeep(end, t); if (b && !keys.includes(b.key + (b.long ? "!" : ""))) keys.push(b.key + (b.long ? "!" : "")); }
+  assert.deepEqual(keys, ["rest:100000:3", "rest:100000:2", "rest:100000:1", "rest:100000:go!"]);
+  assert.equal(restBeep(end, end + 60000), null);
+  assert.equal(restBeep(null), null);
+});
+
+test("rest is per session: every set starts the plan's rest, none if the plan has none", async () => {
+  const { restKey, restAfter } = await import("../js/plan.js");
+  assert.equal(restKey("2026-10-23"), "2026-10-23.rest");
+  const pull = findItem(plan, "2026-10-23", 0, 4).item, circles = findItem(plan, "2026-10-23", 0, 0).item;
+  assert.deepEqual(restAfter(pull, 1000), { restEnd: 91000 });
+  assert.equal(restAfter(circles, 1000), null, "arm circles: straight into the dead hang");
+});
+
+test("after the last set: the next unlogged exercise, wrapping round, none when all are done", async () => {
+  const { nextToDo } = await import("../js/plan.js");
+  const items = dayItems(dayFor(plan, "2026-10-23"));
+  const log = (...idx) => idx.map((i) => ({ ex: items[i].ex, day: "2026-10-23", sets: 1, reps: 1 }));
+  assert.equal(nextToDo(items, log(0), "2026-10-23", 0).ex, "hang");
+  assert.equal(nextToDo(items, log(0, 1, 2, 4), "2026-10-23", 2).ex, "pullup_neg", "skips nothing that's still to do");
+  assert.equal(nextToDo(items, log(4), "2026-10-23", 4).ex, "pushup");
+  assert.equal(nextToDo(items, log(...[1, 2, 3, 4, 5, 6, 7, 8]), "2026-10-23", 8).ex, "arm_circles", "wraps to the first one left");
+  assert.equal(nextToDo(items, log(...items.map((_, i) => i)), "2026-10-23", 8), null);
+});
+
+test("camera sets end by themselves: target reached + a moment, or out of position after a rep", async () => {
+  const { shouldEndSet, AUTO_END } = await import("../js/plan.js");
+  const base = { running: true, count: 8, target: 8, lastRepT: 10000, invalidSince: null };
+  assert.equal(shouldEndSet({ ...base, now: 10000 + AUTO_END.afterTargetMs - 1 }), false, "a rep in progress gets to finish");
+  assert.equal(shouldEndSet({ ...base, now: 10000 + AUTO_END.afterTargetMs }), true);
+  assert.equal(shouldEndSet({ ...base, count: 5, now: 60000 }), false, "short of the target and still in position: keep counting");
+  assert.equal(shouldEndSet({ ...base, count: 5, invalidSince: 20000, now: 20000 + AUTO_END.outOfPositionMs }), true, "got up early");
+  assert.equal(shouldEndSet({ ...base, count: 5, invalidSince: 20000, now: 21000 }), false, "a moment out of view isn't the end");
+  assert.equal(shouldEndSet({ ...base, count: 0, invalidSince: 0, now: 99999 }), false, "no reps yet: never");
+  assert.equal(shouldEndSet({ ...base, running: false, now: 99999 }), false);
 });

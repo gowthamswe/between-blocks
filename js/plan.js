@@ -16,14 +16,23 @@ export function dayKey(t = Date.now()) {
 
 export const planDays = (plan) => (plan && plan.days) || [];
 export const dayFor = (plan, date) => planDays(plan).find((d) => d.date === date) || null;
-export const dayItems = (day) => (day && day.blocks ? day.blocks.flatMap((b, bi) => b.items.map((it, i) => ({ ...it, block: bi, idx: i }))) : []);
+// A day's items, with their position. `dup` marks an exercise that appears more than once that day;
+// only then does the position decide which one a logged result belongs to.
+export const dayItems = (day) => {
+  const items = day && day.blocks ? day.blocks.flatMap((b, bi) => b.items.map((it, i) => ({ ...it, block: bi, idx: i }))) : [];
+  const n = {}; items.forEach((it) => { n[it.ex] = (n[it.ex] || 0) + 1; });
+  return items.map((it) => (n[it.ex] > 1 ? { ...it, dup: true } : it));
+};
+
+// Where an item's in-progress sets are kept. Keyed by exercise, so adding an item (a warm-up at the top)
+// doesn't move them onto the wrong exercise.
+export const itemKey = (date, it) => (it.dup ? `${date}.${it.ex}.${it.block}.${it.idx}` : `${date}.${it.ex}`);
 
 // The item a link points at: "day=2026-10-23&block=0&item=4"
 export function findItem(plan, date, block, idx) {
   const d = dayFor(plan, date);
-  const b = d && d.blocks && d.blocks[block];
-  const it = b && b.items[idx];
-  return it ? { day: d, item: { ...it, block, idx } } : null;
+  const it = dayItems(d).find((x) => x.block === block && x.idx === idx);
+  return it ? { day: d, item: it } : null;
 }
 
 // Which day to open: today if it's in the plan, else the next planned day, else the last one.
@@ -51,8 +60,10 @@ export function entryText(e) {
 
 // Entries for a planned item. Older entries (from Between Blocks) don't record the item index,
 // so they match on day + exercise.
+// Results logged for a planned item: same day and exercise. Position only matters when the
+// exercise appears twice that day (and older Between Blocks entries don't record it at all).
 export function entriesFor(entries, date, item) {
-  return entries.filter((e) => e.day === date && e.ex === item.ex && (e.item == null || (e.item === item.idx && (e.block ?? 0) === item.block)));
+  return entries.filter((e) => e.day === date && e.ex === item.ex && (!item.dup || e.item == null || (e.item === item.idx && (e.block ?? 0) === item.block)));
 }
 
 export function lastEntry(entries, ex, beforeDay) {
@@ -81,11 +92,12 @@ export function dayStatus(day, entries, done) {
 // `reps` is the lowest set, so "3 × 8" means every set reached 8; perSet keeps the detail.
 export function coachEntry(sets, { day, item, ts = Date.now(), w = 0 }) {
   const perSet = sets.map((s) => s.reps);
-  const all = sets.flatMap((s) => (s.repScores || []));
+  const cam = sets.filter((s) => !s.manual);              // sets ticked by hand have no form data
+  const all = cam.flatMap((s) => (s.repScores || []));
   const faults = {};
-  sets.forEach((s) => Object.entries(s.faults || {}).forEach(([f, c]) => { faults[f] = (faults[f] || 0) + c; }));
-  const total = perSet.reduce((a, b) => a + b, 0);
-  const wavg = (k) => (total ? sets.reduce((a, s) => a + (s[k] || 0) * s.reps, 0) / total : 0);
+  cam.forEach((s) => Object.entries(s.faults || {}).forEach(([f, c]) => { faults[f] = (faults[f] || 0) + c; }));
+  const total = cam.reduce((a, s) => a + s.reps, 0);
+  const wavg = (k) => (total ? cam.reduce((a, s) => a + (s[k] || 0) * s.reps, 0) / total : 0);
   return {
     ex: item.ex, sets: sets.length, reps: Math.min(...perSet), w, ts, day: day, block: item.block, item: item.idx,
     src: "coach", perSet,
@@ -138,45 +150,116 @@ export function logText(entries, done, { since } = {}) {
 }
 
 // ---------- per-set tracking on the plan screen ----------
-// Sets done so far live in the item's draft (same key the camera coach uses):
-//   camera coach: { sets: [coachSet] }
-//   by hand:      { manual: n, held: [secs per set, timed holds only], restEnd: ms, holdStart: ms }
+// Sets done so far live in the item's draft, the same one the camera coach uses:
+//   { sets: [set], next: reps for the set you're on (the arrows), restEnd: ms, holdStart: ms }
+// A set is a coachSet from the camera, or { reps, ts, manual: true } ticked by hand (reps = seconds for holds).
+
+// Drafts saved before sets were a list kept a count instead.
+function setsOf(draft) {
+  if (!draft) return [];
+  if (draft.sets) return draft.sets;
+  return Array.from({ length: draft.manual || 0 }, (_, i) => ({ reps: (draft.held && draft.held[i]) ?? null, manual: true }));
+}
 
 export function setProgress(item, draft, logged = []) {
   if (logged.length) { const e = logged[logged.length - 1]; return { done: e.sets, total: Math.max(item.sets, e.sets), logged: true }; }
-  const done = draft ? (draft.sets ? draft.sets.length : draft.manual || 0) : 0;
+  const done = setsOf(draft).length;
   return { done, total: Math.max(item.sets, done), logged: false };
 }
 
-// Tick off one set done by hand. After the last set the exercise is complete (log it); otherwise the rest starts.
+// Reps for the set you're on: the plan's, unless changed with the arrows.
+export const nextReps = (item, draft) => (draft && draft.next != null ? draft.next : amount(item));
+export function adjustReps(item, draft, delta) {
+  const next = Math.max(0, Math.min(99, nextReps(item, draft) + delta));
+  return { ...(draft || {}), sets: setsOf(draft), next: next === amount(item) ? undefined : next };
+}
+
+// Tick off one set by hand. After the last set the exercise is complete (log it); otherwise the rest starts
+// and the next set goes back to the plan's reps.
 export function tickSet(item, draft, { now = Date.now(), held = null } = {}) {
-  const n = ((draft && draft.manual) || 0) + 1;
-  const heldList = [...((draft && draft.held) || []), ...(held != null ? [Math.round(held)] : [])];
-  if (n >= item.sets) return { complete: true, sets: n, held: heldList, draft: null };
-  return { complete: false, sets: n, held: heldList, draft: { manual: n, held: heldList, restEnd: item.rest ? now + item.rest * 1000 : null, holdStart: null } };
+  const reps = held != null ? Math.round(held) : nextReps(item, draft);
+  return addSet(item, draft, { reps, ts: now, manual: true }, now);
+}
+
+// Camera on: when a set ends by itself, so nobody has to get up to tap Done.
+//   target reached and no new rep for 2.5 s → done (a rep still in progress gets to finish)
+//   at least one rep, then out of position for 3 s → they got up; done with what was counted
+export const AUTO_END = { afterTargetMs: 2500, outOfPositionMs: 3000 };
+export function shouldEndSet({ running, count, target, lastRepT, invalidSince, now }) {
+  if (!running || !count) return false;
+  if (target && count >= target && now - lastRepT >= AUTO_END.afterTargetMs) return true;
+  return invalidSince != null && now - invalidSince >= AUTO_END.outOfPositionMs;
+}
+
+// Add one finished set (ticked by hand, or a coachSet from the camera on the plan screen).
+export function addSet(item, draft, set, now = Date.now()) {
+  const sets = [...setsOf(draft).map((x) => (x.reps == null ? { ...x, reps: amount(item) } : x)), set];
+  if (sets.length >= item.sets) return { complete: true, sets, draft: null };
+  return { complete: false, sets, draft: { sets, restEnd: item.rest ? now + item.rest * 1000 : null, holdStart: null } };
+}
+
+// A logged result turned back into sets, so its last set can be undone. Camera details aren't kept.
+export function setsFromEntry(e) {
+  const reps = e.perSet && e.perSet.length === e.sets ? e.perSet : Array.from({ length: e.sets }, () => e.reps);
+  return reps.map((r) => ({ reps: r, manual: true }));
 }
 
 export function undoSet(draft) {
-  const n = ((draft && draft.manual) || 0) - 1;
-  if (n <= 0) return null;
-  return { manual: n, held: ((draft && draft.held) || []).slice(0, n), restEnd: null, holdStart: null };
+  const sets = setsOf(draft).slice(0, -1);
+  if (!sets.length) return null;
+  return { sets, restEnd: null, holdStart: null };
 }
 
-// The entry for an exercise whose sets were all ticked off. Timed holds log the shortest hold.
-export function manualEntry(item, done, { day, w = 0, ts = Date.now() }) {
-  const timed = isTimed(item.ex) && done.held.length;
-  return { ex: item.ex, sets: done.sets, reps: timed ? Math.min(...done.held) : amount(item), w, ts, day, block: item.block, item: item.idx,
-    src: "sets", ...(timed && new Set(done.held).size > 1 ? { perSet: done.held } : {}) };
+// The entry once every set is done. Any camera sets make it a coach entry (form from those sets);
+// hand-ticked only: reps per set, lowest as the headline number.
+export function entryFromSets(item, sets, { day, w = 0, ts = Date.now() }) {
+  if (sets.some((x) => !x.manual)) return coachEntry(sets, { day, item, ts, w });
+  const perSet = sets.map((x) => x.reps);
+  return { ex: item.ex, sets: sets.length, reps: Math.min(...perSet), w, ts, day, block: item.block, item: item.idx,
+    src: "sets", ...(new Set(perSet).size > 1 ? { perSet } : {}) };
 }
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-// What the timer tile shows: a running hold, the rest countdown, or the rest length before you start.
+// Timed holds: tap Start, get a few seconds to get ready, then the hold counts down from the goal.
+export const HOLD_LEAD_MS = 5000;
+export const startHold = (draft, now = Date.now()) => ({ ...(draft || {}), sets: (draft && draft.sets) || [], holdStart: now + HOLD_LEAD_MS, restEnd: null });
+// What the middle tile shows during a hold. holdStart is when the hold itself starts (after the lead-in).
+export function holdState(item, draft, now = Date.now()) {
+  if (!draft || !draft.holdStart) return null;
+  if (now < draft.holdStart) return { mode: "ready", text: String(Math.ceil((draft.holdStart - now) / 1000)), label: "get ready", tone: "ready" };
+  const held = Math.min(item.secs, Math.floor((now - draft.holdStart) / 1000)), left = item.secs - held;
+  return left > 0 ? { mode: "hold", text: String(left), label: "sec left", tone: "live", held }
+    : { mode: "over", text: "0", label: "time! tap done", tone: "go", held };   // stays at 0, no over-time
+}
+// Seconds held when Done is tapped: 0 in the lead-in, never more than the goal.
+export const heldSecs = (draft, now = Date.now(), goal = Infinity) => (draft && draft.holdStart ? Math.min(goal, Math.max(0, (now - draft.holdStart) / 1000)) : null);
+
+// Which beep (if any) belongs to this moment of a hold: short beeps on the last 3 s of the get-ready
+// and of the hold, a long one at "go" and at time's up. Returns a key so each beep plays once.
+export function beepFor(state) {
+  if (!state) return null;
+  const n = Number(state.text);
+  if ((state.mode === "ready" || state.mode === "hold") && n >= 1 && n <= 3) return { key: `${state.mode}:${n}`, long: false };
+  if (state.mode === "hold" && state.held === 0) return { key: "go", long: true };
+  if (state.mode === "over") return { key: "end", long: true };
+  return null;
+}
+
+// Rest belongs to the session, not one exercise: every finished set (the last one too) starts the plan's
+// rest, and it keeps counting when you move to the next exercise. Stored as a draft under this key.
+export const restKey = (date) => `${date}.rest`;
+export const restAfter = (item, now = Date.now()) => (item.rest ? { restEnd: now + item.rest * 1000 } : null);
+
+// After an exercise's last set: the next one to do. The first unlogged item after it, else the first
+// unlogged one anywhere, else null (session done).
+export function nextToDo(items, entries, date, fromIdx) {
+  const todo = (it) => !entriesFor(entries, date, it).length;
+  return items.slice(fromIdx + 1).find(todo) || items.slice(0, fromIdx).find(todo) || null;
+}
+
+// What the timer tile shows: the rest countdown, or the rest length before you start.
 export function timerState(item, draft, now = Date.now()) {
-  if (draft && draft.holdStart) {
-    const s = Math.floor((now - draft.holdStart) / 1000);
-    return { mode: "hold", text: `${s}s`, label: `hold · goal ${item.secs}s`, tone: s >= item.secs ? "go" : "live" };
-  }
   if (draft && draft.restEnd) {
     const left = Math.ceil((draft.restEnd - now) / 1000);
     return left > 0 ? { mode: "rest", text: clock(left), label: "rest", tone: "rest" } : { mode: "go", text: "Go", label: "rest done", tone: "go" };
