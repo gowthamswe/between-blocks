@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dayFor, dayItems, findItem, pickDay, targetText, entryText, entriesFor, logDefaults, dayStatus, coachSet, coachEntry, progress, logText } from "../js/plan.js";
+import { setProgress, tickSet, undoSet, manualEntry, timerState } from "../js/plan.js";
 import { createLocalStore } from "../js/store.js";
 import { EXERCISES } from "../js/exercises.js";
 
@@ -135,4 +136,48 @@ test("a missing history export starts empty instead of failing", async () => {
   const s = createLocalStore({ storage: memStorage(), fetchJson: async (u) => { if (u.endsWith("history.json")) throw new Error("404"); return fetchData(u); } });
   assert.deepEqual(await s.entries(), []);
   assert.equal((await s.plan()).days.length, 10);
+});
+
+test("sets fill one at a time, rest starts between sets, the last set logs the exercise", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 3);            // band pull-up 3 × 5, rest 90
+  assert.deepEqual(setProgress(item, null), { done: 0, total: 3, logged: false });
+  let r = tickSet(item, null, { now: 1000 });
+  assert.equal(r.complete, false);
+  assert.deepEqual(r.draft, { manual: 1, held: [], restEnd: 91000, holdStart: null });
+  assert.equal(setProgress(item, r.draft).done, 1);
+  r = tickSet(item, r.draft, { now: 200000 });
+  assert.equal(setProgress(item, r.draft).done, 2);
+  assert.deepEqual(setProgress(item, undoSet(r.draft)), { done: 1, total: 3, logged: false });
+  assert.equal(undoSet({ manual: 1 }), null);
+  r = tickSet(item, r.draft);
+  assert.equal(r.complete, true); assert.equal(r.draft, null);
+  const e = manualEntry(item, r, { day: "2026-10-23", ts: 5 });
+  assert.deepEqual(e, { ex: "pullup_b", sets: 3, reps: 5, w: 0, ts: 5, day: "2026-10-23", block: 0, item: 3, src: "sets" });
+  assert.deepEqual(setProgress(item, null, [e]), { done: 3, total: 3, logged: true });
+  assert.equal(entriesFor([e], "2026-10-23", item).length, 1);
+});
+
+test("timed holds log the shortest hold", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 0);            // dead hang 2 × 20 s
+  const r1 = tickSet(item, { manual: 0, held: [], holdStart: 1 }, { held: 22.4 });
+  const r2 = tickSet(item, r1.draft, { held: 19.6 });
+  assert.equal(r2.complete, true);
+  const e = manualEntry(item, r2, { day: "2026-10-23", ts: 1 });
+  assert.equal(e.reps, 20); assert.deepEqual(e.perSet, [22, 20]);
+  assert.equal(entryText(e), "2 sets: 22, 20 s");
+});
+
+test("camera coach sets fill the bars too", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 4);
+  assert.deepEqual(setProgress(item, { sets: [{ reps: 8 }, { reps: 7 }] }), { done: 2, total: 3, logged: false });
+});
+
+test("the timer tile shows rest, then go, or a running hold", () => {
+  const { item } = findItem(plan, "2026-10-23", 0, 3);
+  assert.deepEqual(timerState(item, null), { mode: "idle", text: "1:30", label: "rest", tone: "idle" });
+  assert.deepEqual(timerState(item, { restEnd: 100000 }, 28000), { mode: "rest", text: "1:12", label: "rest", tone: "rest" });
+  assert.equal(timerState(item, { restEnd: 100000 }, 100500).text, "Go");
+  const hang = findItem(plan, "2026-10-23", 0, 0).item;
+  assert.deepEqual(timerState(hang, { holdStart: 1000 }, 13300), { mode: "hold", text: "12s", label: "hold · goal 20s", tone: "live" });
+  assert.equal(timerState(hang, { holdStart: 1000 }, 21000).tone, "go");
 });

@@ -165,14 +165,46 @@
 .next-img .headc { fill: var(--fig-ink); } .next-img .prop { stroke: var(--fig-prop); } .next-img .bench, .next-img .shadow { fill: var(--fig-prop); }
 .next-img .db, .next-img .hand { fill: var(--fig-db); } .next-img .torso-fill { fill: var(--fig-torso); stroke: var(--fig-torso); }
 
+/* set tracking: three tiles next to the title — sets (bars) · reps · timer */
+.st-titles { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.st-titles .st-step { margin-top: 0; }
+.st-titles .st-note { margin: 0; }
+.tiles { flex: none; display: grid; grid-template-columns: repeat(3, minmax(92px, auto)); gap: 8px; }
+.tile { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; min-height: 104px; padding: 12px 14px 10px;
+  border-radius: 16px; background: var(--raised); border: 1px solid var(--line-strong); }
+.tile-big { font-family: var(--display); font-weight: 800; font-size: 2.6rem; line-height: .9; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.tile-lab { font-family: var(--mono); font-size: .66rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 52px; }
+.bar { width: 14px; height: 100%; border-radius: 5px; border: 2px solid var(--line-strong); background: transparent; padding: 0; }
+button.bar { cursor: pointer; }
+.bar[data-s="done"] { background: var(--good); border-color: var(--good); }
+.bar[data-s="now"] { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239,124,88,.18); }
+button.bar[data-s="now"]:hover { background: rgba(239,124,88,.25); }
+button.bar[data-s="done"]:hover { opacity: .7; }
+.tile-sets[data-done="1"] .tile-lab { color: var(--good); }
+.tile-timer[data-tone="rest"] .tile-big { color: var(--accent); }
+.tile-timer[data-tone="go"] .tile-big { color: var(--good); }
+.tile-timer[data-tone="live"] .tile-big { color: var(--warn); }
+.tile-timer[data-tone="idle"] .tile-big { color: var(--ink-soft); font-size: 2rem; }
+.move-sub[data-progress="1"] { color: var(--accent); }
+.board .stage .ctrls { flex-wrap: wrap; }
+
 /* narrow screens: selected exercise first, list below */
 @media (max-width: 900px) {
   .board { grid-template-columns: minmax(0, 1fr); }
   .map { order: 2; border-right: 0; border-top: 1px solid var(--line); }
   .board .stage { order: 1; }
 }
+@media (max-width: 1100px) {
+  .st-head { flex-direction: column; align-items: stretch; }
+  .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 560px) {
   .board .stage { padding: 20px 16px; }
+  .tile { min-height: 92px; padding: 10px 6px 8px; }
+  .tile-big { font-size: 2.1rem; }
+  .tile-lab { font-size: .58rem; letter-spacing: .06em; white-space: normal; text-align: center; }
+  .bars { height: 44px; gap: 5px; } .bar { width: 12px; }
   .map { padding: 20px 12px; }
   .move { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 9px 8px; }
   .move-num { width: 34px; height: 34px; }
@@ -244,6 +276,16 @@
 .back { color: var(--muted); font-size: .85rem; text-decoration: none; white-space: nowrap; }
 .back:hover { color: var(--ink); }
 .rest { font-family: var(--mono); font-size: .9rem; color: var(--accent); }
+/* set bars on the coach: under the rep count while working, and on the between-sets summary */
+.hud-sets { position: absolute; left: clamp(12px, 3vw, 32px); top: calc(clamp(10px, 3vh, 28px) + clamp(5rem, 16vw, 12rem) + 2.2rem);
+  display: flex; align-items: flex-end; gap: 12px; padding: 10px 14px; border-radius: 14px; background: rgba(27,25,23,.82); border: 1px solid var(--line-strong); }
+.hud-sets .bars { height: clamp(40px, 7vh, 64px); }
+.hud-sets .bar { width: clamp(14px, 1.6vw, 20px); }
+.hud-sets .tile-lab { font-size: .8rem; color: var(--ink-soft); }
+.sum-sets { display: flex; align-items: flex-end; gap: 14px; }
+.sum-sets .bars { height: 44px; }
+.sum-sets .tile-lab { font-size: .78rem; color: var(--ink-soft); }
+
 @media (max-width: 600px) {
   /* from the plan, the set number matters more than the name */
   .app[data-plan="1"] .brand { display: none; }

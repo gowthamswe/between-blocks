@@ -3,6 +3,7 @@
 import { createLocalStore } from "./store.js";
 import { exName, isTimed, isBodyweight, canCoach, CUES } from "./exercises.js";
 import { makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
+import { setProgress, tickSet, undoSet, manualEntry, timerState } from "./plan.js";
 import { dayKey, planDays, dayFor, dayItems, pickDay, targetText, entryText, entriesFor, logDefaults, dayStatus, progress, logText } from "./plan.js";
 
 const store = createLocalStore();
@@ -89,8 +90,9 @@ async function renderDay() {
     openItem = itemKey(d.date, next || items[0]);
   }
   const cur = keys.indexOf(openItem);
+  const drafts = await Promise.all(keys.map((k) => store.draft(k)));
   const board = el("section", { class: "board" });
-  board.append(renderMap(d, items, cur), await renderStage(d, items, cur));
+  board.append(renderMap(d, items, cur, drafts), await renderStage(d, items, cur, drafts[cur]));
   host.append(board);
 }
 
@@ -99,7 +101,7 @@ function select(key) {
   if (matchMedia("(max-width: 900px)").matches) $("stage")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
-function renderMap(d, items, cur) {
+function renderMap(d, items, cur, drafts) {
   const today = dayKey(), st = dayStatus(d, entries, done);
   const map = el("aside", { class: "map" });
   map.append(el("span", { class: "s-kind", text: d.kind }),
@@ -109,12 +111,13 @@ function renderMap(d, items, cur) {
   if (d.note) map.append(el("p", { class: "coach-note", text: d.note }));
   const ol = el("ol", { class: "moves" });
   items.forEach((it, i) => {
-    const key = itemKey(d.date, it), logged = entriesFor(entries, d.date, it);
+    const key = itemKey(d.date, it), logged = entriesFor(entries, d.date, it), pr = setProgress(it, drafts[i], logged);
     const s = i === cur ? "now" : logged.length ? "done" : "todo";
     ol.append(el("li", {}, el("button", { class: "move", type: "button", "data-s": s, "data-logged": logged.length ? "1" : null, "aria-current": i === cur ? "true" : null, onclick: () => select(key) },
       el("span", { class: "move-num" }, logged.length ? TICK() : String(i + 1).padStart(2, "0")),
       el("span", { class: "move-mid" }, el("span", { class: "move-name", text: exName(it.ex) }),
-        el("span", { class: "move-sub", text: logged.length ? "Logged " + entryText(logged[logged.length - 1]) : it.note || (canCoach(it.ex) ? "camera coach" : "") })),
+        el("span", { class: "move-sub", "data-progress": !logged.length && pr.done ? "1" : null,
+          text: logged.length ? "Logged " + entryText(logged[logged.length - 1]) : pr.done ? `${pr.done} of ${pr.total} sets done` : it.note || (canCoach(it.ex) ? "camera coach" : "") })),
       el("span", { class: "move-t", text: targetText(it) }))));
   });
   map.append(ol);
@@ -126,37 +129,91 @@ function renderMap(d, items, cur) {
   return map;
 }
 
-async function renderStage(d, items, cur) {
+// ---------- set tracking: tiles next to the title (sets · reps · timer) and one big "set done" button ----------
+let timerIv = 0, timerCtx = null;   // the selected item and its draft, for the live timer tile
+function paintTimer() {
+  const host = $("st-timer"); if (!host || !timerCtx) return;
+  const t = timerState(timerCtx.item, timerCtx.draft);
+  host.dataset.tone = t.tone;
+  host.querySelector(".tile-big").textContent = t.text;
+  host.querySelector(".tile-lab").textContent = t.label;
+}
+function startTimer() { clearInterval(timerIv); paintTimer(); timerIv = setInterval(paintTimer, 250); }
+
+async function saveSets(d, it, draft) {
+  const key = itemKey(d.date, it);
+  if (draft) await store.saveDraft(key, draft); else await store.clearDraft(key);
+}
+async function finishSet(d, it, draft) {
+  const held = draft && draft.holdStart ? (Date.now() - draft.holdStart) / 1000 : null;
+  const r = tickSet(it, draft, { held });
+  if (r.complete) {
+    const w = isBodyweight(it.ex) ? 0 : logDefaults(it, entries, d.date).w;
+    await store.addEntry(manualEntry(it, r, { day: d.date, w }));
+    await store.clearDraft(itemKey(d.date, it));
+    await refresh();
+  } else await saveSets(d, it, r.draft);
+  render();
+}
+
+function tiles(d, it, draft, logged) {
+  const pr = setProgress(it, draft, logged), manual = !canCoach(it.ex) && !pr.logged;
+  const bars = el("div", { class: "bars", role: "group", "aria-label": `${pr.done} of ${pr.total} sets done` });
+  for (let i = 0; i < pr.total; i++) {
+    const s = i < pr.done ? "done" : i === pr.done && !pr.logged ? "now" : "todo";
+    // tap the next bar to tick a set off, or the last filled one to undo it
+    const act = !manual ? null : i === pr.done && !isTimed(it.ex) ? () => finishSet(d, it, draft)
+      : i === pr.done - 1 ? async () => { await saveSets(d, it, undoSet(draft)); render(); } : null;
+    bars.append(act ? el("button", { class: "bar", type: "button", "data-s": s, "aria-label": s === "now" ? `Set ${i + 1} done` : `Undo set ${i + 1}`, onclick: act })
+      : el("span", { class: "bar", "data-s": s }));
+  }
+  const setsLab = pr.logged ? `${pr.done} sets ✓` : pr.done ? `${pr.done} of ${pr.total} sets` : `${pr.total} sets`;
+  const w = isBodyweight(it.ex) ? 0 : logDefaults(it, entries, d.date).w;
+  const amountLab = isTimed(it.ex) ? "sec hold" : it.each ? "reps each side" : it.reps === 1 ? "rep" : "reps";
+  const t = timerState(it, draft);
+  return el("div", { class: "tiles" },
+    el("div", { class: "tile tile-sets", "data-done": pr.logged ? "1" : null }, bars, el("span", { class: "tile-lab", text: setsLab })),
+    el("div", { class: "tile" }, el("span", { class: "tile-big", text: String(isTimed(it.ex) ? it.secs : it.reps) }),
+      el("span", { class: "tile-lab", text: amountLab + (w ? ` · ${w} lb` : "") })),
+    el("div", { class: "tile tile-timer", id: "st-timer", "data-tone": t.tone }, el("span", { class: "tile-big", text: t.text }), el("span", { class: "tile-lab", text: t.label })));
+}
+
+async function renderStage(d, items, cur, draft) {
   const it = items[cur], key = itemKey(d.date, it);
   const logged = entriesFor(entries, d.date, it);
-  const draft = canCoach(it.ex) ? await store.draft(key) : null;
+  const pr = setProgress(it, draft, logged);
+  timerCtx = { item: it, draft };
   const stage = el("div", { class: "stage", id: "stage" });
-  stage.append(el("div", { class: "st-head" }, el("h2", { class: "st-name", text: exName(it.ex) }), el("span", { class: "st-step", text: `${cur + 1} of ${items.length}` })));
-  if (it.note) stage.append(el("p", { class: "st-note", text: it.note[0].toUpperCase() + it.note.slice(1) }));
+  stage.append(el("div", { class: "st-head" },
+    el("div", { class: "st-titles" }, el("span", { class: "st-step", text: `${cur + 1} of ${items.length}` }), el("h2", { class: "st-name", text: exName(it.ex) }),
+      it.note ? el("p", { class: "st-note", text: it.note[0].toUpperCase() + it.note.slice(1) }) : null),
+    tiles(d, it, draft, logged)));
 
-  const unit = isTimed(it.ex) ? "sec hold" : it.each ? "reps each side" : it.reps === 1 ? "rep" : "reps";
-  const row = el("div", { class: "st-row" },
-    el("div", { class: "st-target" }, el("span", { class: "big-num", text: `${it.sets}×${isTimed(it.ex) ? it.secs : it.reps}` }),
-      el("span", { class: "big-lab" }, el("b", { text: unit }), el("small", { text: it.rest ? `${it.sets} sets · rest ${it.rest} s` : `${it.sets} sets` }))));
   const acts = el("div", { class: "ctrls" });
   acts.append(el("button", { class: "ic-btn", type: "button", "aria-label": "Previous exercise", disabled: cur === 0, onclick: () => select(itemKey(d.date, items[cur - 1])), text: "←" }));
   if (!logged.length) {
+    const n = pr.done + 1;
     if (canCoach(it.ex)) {
       const q = new URLSearchParams({ day: d.date, block: it.block, item: it.idx });
-      acts.append(el("a", { class: "play-btn", href: "coach.html?" + q, text: draft && draft.sets && draft.sets.length ? `Continue (${draft.sets.length}/${it.sets} sets)` : "Coach with camera" }));
+      acts.append(el("a", { class: "play-btn", href: "coach.html?" + q, text: pr.done ? `Coach · set ${n} of ${pr.total}` : "Coach with camera" }));
+    } else if (isTimed(it.ex)) {
+      acts.append(draft && draft.holdStart
+        ? el("button", { class: "play-btn", type: "button", text: `✓ Hold done · set ${n}`, onclick: () => finishSet(d, it, draft) })
+        : el("button", { class: "play-btn", type: "button", text: `Start hold · set ${n}`, onclick: async () => { await saveSets(d, it, { ...(draft || { manual: 0, held: [] }), holdStart: Date.now(), restEnd: null }); render(); } }));
+    } else {
+      acts.append(el("button", { class: "play-btn", type: "button", text: `✓ Set ${n} done`, onclick: () => finishSet(d, it, draft) }));
     }
-    acts.append(el("button", { class: canCoach(it.ex) ? "ghost-btn" : "play-btn", type: "button", text: openForm === key ? "Cancel" : "Log", onclick: () => { openForm = openForm === key ? null : key; render(); } }));
+    acts.append(el("button", { class: "ghost-btn", type: "button", text: openForm === key ? "Cancel" : "Log", onclick: () => { openForm = openForm === key ? null : key; render(); } }));
   }
   acts.append(el("button", { class: "ic-btn", type: "button", "aria-label": "Next exercise", disabled: cur === items.length - 1, onclick: () => select(itemKey(d.date, items[cur + 1])), text: "→" }));
-  row.append(acts);
-  stage.append(row);
+  stage.append(acts);
 
   logged.forEach((e) => {
     const extra = e.src === "coach" ? ` · camera coach, form ${e.form}/100` : "";
     stage.append(el("div", { class: "logged" }, el("span", {}, TICK(), " Logged " + entryText(e) + extra),
       el("button", { class: "linkish", type: "button", text: "Remove", onclick: async () => { await store.removeEntry(e.id); await refresh(); render(); } })));
   });
-  if (openForm === key) stage.append(logForm(d, it));
+  if (openForm === key) stage.append(logForm(d, it, draft));
   stage.append(media(it.ex));
   if (CUES[it.ex]) stage.append(el("ul", { class: "cues" }, CUES[it.ex].map((c) => el("li", { text: c }))));
 
@@ -170,8 +227,10 @@ async function renderStage(d, items, cur) {
   return stage;
 }
 
-function logForm(d, it) {
+function logForm(d, it, draft) {
   const v = logDefaults(it, entries, d.date);
+  const pr = setProgress(it, draft);
+  if (pr.done && pr.done < it.sets) v.sets = pr.done;
   const field = (name, label, value, step = 1) => el("label", { class: "field" }, el("span", { text: label }),
     el("input", { type: "number", inputmode: "decimal", min: "0", step: String(step), name, value: String(value) }));
   const form = el("form", { class: "log-form", onsubmit: async (ev) => {
@@ -179,6 +238,7 @@ function logForm(d, it) {
     const f = new FormData(form), num = (k) => Number(f.get(k) || 0);
     if (!num("sets") || !num("reps")) return;
     await store.addEntry({ ex: it.ex, sets: num("sets"), reps: num("reps"), w: isBodyweight(it.ex) ? 0 : num("w"), day: d.date, block: it.block, item: it.idx });
+    if (!canCoach(it.ex)) await store.clearDraft(itemKey(d.date, it));
     openForm = null; await refresh(); render();
   } },
   field("sets", "Sets", v.sets), field("reps", isTimed(it.ex) ? "Seconds" : it.each ? "Reps each side" : "Reps", v.reps),
@@ -241,10 +301,12 @@ function wireTabs() {
 }
 
 async function render() {
-  ticks = [];
+  ticks = []; timerCtx = null;
+  $("foot").textContent = `Plan updated ${plan.updated || "?"} · progress saved in this browser (${entries.length} entries) · camera coach for push-ups, squats, glute bridges and RDLs`;
   renderWeek();
   await renderDay();
   startTicks();
+  if (timerCtx) startTimer(); else clearInterval(timerIv);
   if (!$("view-progress").hidden) renderProgress();
   if (!$("view-history").hidden) renderHistory();
 }
@@ -267,7 +329,6 @@ async function boot() {
   await refresh();
   const want = params.get("day");
   sel = want && dayFor(plan, want) ? want : pickDay(plan);
-  $("foot").textContent = `Plan updated ${plan.updated || "?"} · progress saved in this browser (${entries.length} entries) · camera coach for push-ups, squats, glute bridges and RDLs`;
   await render();
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }

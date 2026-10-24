@@ -43,7 +43,8 @@ export function targetText(item) {
 }
 
 export function entryText(e) {
-  const per = isTimed(e.ex) ? `${e.reps} s` : e.perSet && new Set(e.perSet).size > 1 ? e.perSet.join(", ") : `${e.reps}`;
+  const varied = e.perSet && new Set(e.perSet).size > 1;
+  const per = (varied ? e.perSet.join(", ") : `${e.reps}`) + (isTimed(e.ex) ? " s" : "");
   const sets = e.perSet && new Set(e.perSet).size > 1 ? `${e.perSet.length} sets: ` : `${e.sets} × `;
   return `${sets}${per}${e.w ? ` · ${e.w} lb` : ""}`;
 }
@@ -134,4 +135,51 @@ export function logText(entries, done, { since } = {}) {
     const dn = done.find((x) => x.date === d);
     return `${d}${dn ? " · session done" + (dn.mins ? `, ${dn.mins} min` : "") : ""}\n${lines.join("\n")}`;
   }).join("\n\n");
+}
+
+// ---------- per-set tracking on the plan screen ----------
+// Sets done so far live in the item's draft (same key the camera coach uses):
+//   camera coach: { sets: [coachSet] }
+//   by hand:      { manual: n, held: [secs per set, timed holds only], restEnd: ms, holdStart: ms }
+
+export function setProgress(item, draft, logged = []) {
+  if (logged.length) { const e = logged[logged.length - 1]; return { done: e.sets, total: Math.max(item.sets, e.sets), logged: true }; }
+  const done = draft ? (draft.sets ? draft.sets.length : draft.manual || 0) : 0;
+  return { done, total: Math.max(item.sets, done), logged: false };
+}
+
+// Tick off one set done by hand. After the last set the exercise is complete (log it); otherwise the rest starts.
+export function tickSet(item, draft, { now = Date.now(), held = null } = {}) {
+  const n = ((draft && draft.manual) || 0) + 1;
+  const heldList = [...((draft && draft.held) || []), ...(held != null ? [Math.round(held)] : [])];
+  if (n >= item.sets) return { complete: true, sets: n, held: heldList, draft: null };
+  return { complete: false, sets: n, held: heldList, draft: { manual: n, held: heldList, restEnd: item.rest ? now + item.rest * 1000 : null, holdStart: null } };
+}
+
+export function undoSet(draft) {
+  const n = ((draft && draft.manual) || 0) - 1;
+  if (n <= 0) return null;
+  return { manual: n, held: ((draft && draft.held) || []).slice(0, n), restEnd: null, holdStart: null };
+}
+
+// The entry for an exercise whose sets were all ticked off. Timed holds log the shortest hold.
+export function manualEntry(item, done, { day, w = 0, ts = Date.now() }) {
+  const timed = isTimed(item.ex) && done.held.length;
+  return { ex: item.ex, sets: done.sets, reps: timed ? Math.min(...done.held) : amount(item), w, ts, day, block: item.block, item: item.idx,
+    src: "sets", ...(timed && new Set(done.held).size > 1 ? { perSet: done.held } : {}) };
+}
+
+const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+// What the timer tile shows: a running hold, the rest countdown, or the rest length before you start.
+export function timerState(item, draft, now = Date.now()) {
+  if (draft && draft.holdStart) {
+    const s = Math.floor((now - draft.holdStart) / 1000);
+    return { mode: "hold", text: `${s}s`, label: `hold · goal ${item.secs}s`, tone: s >= item.secs ? "go" : "live" };
+  }
+  if (draft && draft.restEnd) {
+    const left = Math.ceil((draft.restEnd - now) / 1000);
+    return left > 0 ? { mode: "rest", text: clock(left), label: "rest", tone: "rest" } : { mode: "go", text: "Go", label: "rest done", tone: "go" };
+  }
+  return { mode: "idle", text: item.rest ? clock(item.rest) : "—", label: item.rest ? "rest" : "no rest", tone: "idle" };
 }

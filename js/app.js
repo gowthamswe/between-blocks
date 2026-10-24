@@ -71,7 +71,22 @@ function showCaption(text, kind = "info") {
 }
 voice.onSpeak = (u) => { if (u.kind !== "count") showCaption(u.text, u.kind); };
 
+// Set bars (when opened from the plan): done sets filled, the current one outlined.
+function renderSetBars() {
+  ["hud", "sum"].forEach((where) => { $(where + "-sets").hidden = !ctx; });
+  if (!ctx) return;
+  const done = ctx.sets.length, inSet = running ? 1 : 0, total = Math.max(ctx.item.sets, done + inSet);
+  const cur = running ? done : done < ctx.item.sets ? done : -1;
+  ["hud", "sum"].forEach((where) => {
+    const bars = $(where + "-bars"); bars.textContent = "";
+    for (let i = 0; i < total; i++) { const b = document.createElement("span"); b.className = "bar"; b.dataset.s = i < done ? "done" : i === cur ? "now" : "todo"; bars.appendChild(b); }
+  });
+  $("hud-sets-lab").textContent = `set ${Math.min(done + 1, total)} of ${total}`;
+  $("sum-sets-lab").textContent = done >= ctx.item.sets ? `${done} of ${ctx.item.sets} sets done` : `${done} of ${ctx.item.sets} sets · next: set ${done + 1}`;
+}
+
 function renderCount() {
+  renderSetBars();
   $("count").textContent = reps.length;
   $("count-of").textContent = settings.target ? `/ ${settings.target}` : "";
   $("count").parentElement.dataset.done = settings.target && reps.length >= settings.target ? "1" : "0";
@@ -282,6 +297,7 @@ function renderPlanLabel() {
   if (!ctx) return;
   const done = ctx.sets.length, total = ctx.item.sets;
   app.dataset.plan = "1";
+  renderSetBars();
   $("ex-label").textContent = done < total ? `${move.name} · set ${done + 1} of ${total}` : `${move.name} · ${done} sets done`;
 }
 
