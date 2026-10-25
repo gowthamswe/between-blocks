@@ -491,8 +491,413 @@
    "kind": "Full",
    "note": "Push-ups go to 8 today if 7 felt solid on Friday and Monday; if not, stay at 7 and log what you got.",
    "title": "Pull, push and legs"
+  },
+  {
+   "date": "2026-10-24",
+   "kind": "DBs",
+   "title": "Dumbbell day",
+   "note": "Week 3. You did 3 \u00d7 12 on every dumbbell move twice, so the dumbbells go up a step and the reps drop back to 10. Arm circles first to warm up the shoulders for the press and rows.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up for the shoulders: 30 s forwards, then 30 s backwards"
+      },
+      {
+       "ex": "bw_squat",
+       "sets": 1,
+       "reps": 10,
+       "rest": 45,
+       "note": "warm-up, slow and deep"
+      },
+      {
+       "ex": "goblet",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "next heavier dumbbells (12.5 or 15 lb), back to 10 reps"
+      },
+      {
+       "ex": "db_row",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "each": true,
+       "note": "each arm; next heavier dumbbells (12.5 or 15 lb), back to 10 reps"
+      },
+      {
+       "ex": "db_ohp",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "note": "next heavier dumbbells (12.5 or 15 lb), back to 10 reps"
+      },
+      {
+       "ex": "db_rdl",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "next heavier dumbbells (12.5 or 15 lb), back to 10 reps"
+      },
+      {
+       "ex": "knee_raise",
+       "sets": 2,
+       "reps": 10,
+       "rest": 60
+      },
+      {
+       "ex": "farmer",
+       "sets": 3,
+       "secs": 40,
+       "rest": 75,
+       "note": "with the heavier dumbbells; set them down before your grip fails"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-25",
+   "kind": "Easy",
+   "title": "Easy day",
+   "note": "Rest day. The two floor moves are optional, about 10 minutes; a walk or a full day off is just as good. Stay off the bar.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "glute_br",
+       "sets": 2,
+       "reps": 15,
+       "rest": 45
+      },
+      {
+       "ex": "hollow",
+       "sets": 2,
+       "secs": 20,
+       "rest": 45
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-26",
+   "kind": "Full",
+   "title": "Pull, push and legs",
+   "note": "Everything went up a step after you hit every target last week: dead hang to 25 s, scapular pulls to 8, a fifth negative, band pull-ups to 6, bridges to 15, hollow to 25 s. Push-ups stay at 8: make each one a slow 2 seconds down.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up: 30 s forwards, then 30 s backwards"
+      },
+      {
+       "ex": "hang",
+       "sets": 2,
+       "secs": 25,
+       "rest": 60,
+       "note": "warm-up for the bar"
+      },
+      {
+       "ex": "scap_pull",
+       "sets": 2,
+       "reps": 8,
+       "rest": 60
+      },
+      {
+       "ex": "pullup_neg",
+       "sets": 5,
+       "reps": 1,
+       "rest": 90,
+       "note": "5-second lower"
+      },
+      {
+       "ex": "pullup_b",
+       "sets": 3,
+       "reps": 6,
+       "rest": 90,
+       "note": "two heaviest bands; if rep 6 is a grind, stop at 5 and log 5"
+      },
+      {
+       "ex": "pushup",
+       "sets": 3,
+       "reps": 8,
+       "rest": 60,
+       "note": "2 seconds on the way down; the camera flagged rushing last time"
+      },
+      {
+       "ex": "bw_squat",
+       "sets": 3,
+       "reps": 15,
+       "rest": 60,
+       "note": "2 seconds down, heels stay on the floor"
+      },
+      {
+       "ex": "glute_br",
+       "sets": 3,
+       "reps": 15,
+       "rest": 45,
+       "note": "3-second squeeze at the top, feet close to your hips"
+      },
+      {
+       "ex": "hollow",
+       "sets": 3,
+       "secs": 25,
+       "rest": 45
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-27",
+   "kind": "DBs",
+   "title": "Dumbbell day",
+   "note": "Same 15 lb as Saturday. If all 3 sets of 10 felt solid, go for 11 or 12.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up for the shoulders: 30 s forwards, then 30 s backwards"
+      },
+      {
+       "ex": "bw_squat",
+       "sets": 1,
+       "reps": 10,
+       "rest": 45,
+       "note": "warm-up, slow and deep"
+      },
+      {
+       "ex": "goblet",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_row",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "each": true,
+       "note": "each arm; 15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_ohp",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_rdl",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "knee_raise",
+       "sets": 2,
+       "reps": 10,
+       "rest": 60
+      },
+      {
+       "ex": "farmer",
+       "sets": 3,
+       "secs": 40,
+       "rest": 75,
+       "note": "15 lb each hand; set them down before your grip fails"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-28",
+   "kind": "Easy",
+   "title": "Easy day",
+   "note": "Rest day. The two floor moves are optional, about 10 minutes; a walk or a full day off is just as good. Stay off the bar.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "glute_br",
+       "sets": 2,
+       "reps": 15,
+       "rest": 45
+      },
+      {
+       "ex": "hollow",
+       "sets": 2,
+       "secs": 20,
+       "rest": 45
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-29",
+   "kind": "Full",
+   "title": "Pull, push and legs",
+   "note": "Same targets as Monday. If anything was a grind then, repeat what you actually did.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up: 30 s forwards, then 30 s backwards"
+      },
+      {
+       "ex": "hang",
+       "sets": 2,
+       "secs": 25,
+       "rest": 60,
+       "note": "warm-up for the bar"
+      },
+      {
+       "ex": "scap_pull",
+       "sets": 2,
+       "reps": 8,
+       "rest": 60
+      },
+      {
+       "ex": "pullup_neg",
+       "sets": 5,
+       "reps": 1,
+       "rest": 90,
+       "note": "5-second lower"
+      },
+      {
+       "ex": "pullup_b",
+       "sets": 3,
+       "reps": 6,
+       "rest": 90,
+       "note": "two heaviest bands; if rep 6 is a grind, stop at 5 and log 5"
+      },
+      {
+       "ex": "pushup",
+       "sets": 3,
+       "reps": 8,
+       "rest": 60,
+       "note": "2 seconds down, same as Monday"
+      },
+      {
+       "ex": "bw_squat",
+       "sets": 3,
+       "reps": 15,
+       "rest": 60,
+       "note": "2 seconds down, heels stay on the floor"
+      },
+      {
+       "ex": "glute_br",
+       "sets": 3,
+       "reps": 15,
+       "rest": 45,
+       "note": "3-second squeeze at the top, feet close to your hips"
+      },
+      {
+       "ex": "hollow",
+       "sets": 3,
+       "secs": 25,
+       "rest": 45
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-30",
+   "kind": "DBs",
+   "title": "Dumbbell day",
+   "note": "Same 15 lb. Work up from 10 toward 12 reps; once all 3 sets of 12 feel solid, add weight on the adjustable dumbbells and drop back to 10.",
+   "blocks": [
+    {
+     "name": "Today's session",
+     "items": [
+      {
+       "ex": "arm_circles",
+       "sets": 1,
+       "secs": 60,
+       "rest": 0,
+       "note": "warm-up for the shoulders: 30 s forwards, then 30 s backwards"
+      },
+      {
+       "ex": "bw_squat",
+       "sets": 1,
+       "reps": 10,
+       "rest": 45,
+       "note": "warm-up, slow and deep"
+      },
+      {
+       "ex": "goblet",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_row",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "each": true,
+       "note": "each arm; 15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_ohp",
+       "sets": 3,
+       "reps": 10,
+       "rest": 60,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "db_rdl",
+       "sets": 3,
+       "reps": 10,
+       "rest": 75,
+       "note": "15 lb; aim for 11\u201312 reps if 10 felt solid"
+      },
+      {
+       "ex": "knee_raise",
+       "sets": 2,
+       "reps": 10,
+       "rest": 60
+      },
+      {
+       "ex": "farmer",
+       "sets": 3,
+       "secs": 40,
+       "rest": 75,
+       "note": "15 lb each hand; set them down before your grip fails"
+      }
+     ]
+    }
+   ]
   }
  ],
  "from": "2026-10-14",
- "updated": "2026-10-23"
+ "updated": "2026-10-25"
 }

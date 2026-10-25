@@ -18,9 +18,8 @@ function memStorage() {
 const fetchData = async (url) => load(url.replace(/^data\//, ""));
 
 test("the copied plan has every day from Between Blocks and only exercises the app knows", () => {
-  assert.equal(plan.days.length, 10);
+  assert.equal(plan.days.filter((d) => d.date <= "2026-10-23").length, 10, "the 10 days copied from Between Blocks");
   assert.equal(plan.days[0].date, "2026-10-14");
-  assert.equal(plan.days.at(-1).date, "2026-10-23");
   assert.equal(plan.undo, undefined, "the one-time skip snapshot is left behind");
   for (const d of plan.days) for (const it of dayItems(d)) assert.ok(EXERCISES[it.ex], `${d.date}: unknown exercise ${it.ex}`);
   const today = dayFor(plan, "2026-10-23");
@@ -37,7 +36,7 @@ test("skipped days stay skipped", () => {
 test("opens today, else the next planned day, else the last", () => {
   assert.equal(pickDay(plan, "2026-10-19"), "2026-10-19");
   assert.equal(pickDay(plan, "2026-10-01"), "2026-10-14");
-  assert.equal(pickDay(plan, "2026-11-01"), "2026-10-23");
+  assert.equal(pickDay(plan, "2026-11-01"), plan.days.at(-1).date);
 });
 
 test("finds an item from a coach link", () => {
@@ -128,7 +127,7 @@ test("coach drafts survive a reload and clear after saving", async () => {
 test("export holds everything needed to move to another store", async () => {
   const s = createLocalStore({ storage: memStorage(), fetchJson: fetchData });
   const x = await s.exportAll();
-  assert.equal(x.plan.days.length, 10);
+  assert.equal(x.plan.days.length, plan.days.length);
   assert.equal(x.entries.length, 73);
   assert.equal(x.seeded.from, "2026-10-23");
 });
@@ -136,7 +135,7 @@ test("export holds everything needed to move to another store", async () => {
 test("a missing history export starts empty instead of failing", async () => {
   const s = createLocalStore({ storage: memStorage(), fetchJson: async (u) => { if (u.endsWith("history.json")) throw new Error("404"); return fetchData(u); } });
   assert.deepEqual(await s.entries(), []);
-  assert.equal((await s.plan()).days.length, 10);
+  assert.equal((await s.plan()).days.length, plan.days.length);
 });
 
 test("sets fill one at a time, rest starts between sets, the last set logs the exercise", () => {
@@ -331,4 +330,89 @@ test("camera sets end by themselves: target reached + a moment, or out of positi
   assert.equal(shouldEndSet({ ...base, count: 5, invalidSince: 20000, now: 21000 }), false, "a moment out of view isn't the end");
   assert.equal(shouldEndSet({ ...base, count: 0, invalidSince: 0, now: 99999 }), false, "no reps yet: never");
   assert.equal(shouldEndSet({ ...base, running: false, now: 99999 }), false);
+});
+
+test("the week after Oct 23: bar / dumbbell / easy rhythm, warm-ups first, progressions", () => {
+  const week = plan.days.filter((d) => d.date >= "2026-10-24" && d.date <= "2026-10-30");
+  assert.deepEqual(week.map((d) => d.kind), ["DBs", "Easy", "Full", "DBs", "Easy", "Full", "DBs"]);
+  for (const d of week) {
+    const items = dayItems(d);
+    for (const it of items) assert.ok(EXERCISES[it.ex], `${d.date}: ${it.ex}`);
+    if (d.kind !== "Easy") assert.equal(items[0].ex, "arm_circles", `${d.date} opens with the warm-up`);
+    for (const it of items) assert.ok(!/after 1 min of/.test(it.note || ""), "no warm-up hidden in a note");
+  }
+  const bar = dayItems(dayFor(plan, "2026-10-26")), by = (ex) => bar.find((it) => it.ex === ex);
+  assert.deepEqual([by("hang").secs, by("scap_pull").reps, by("pullup_neg").sets, by("pullup_b").reps, by("pushup").reps, by("hollow").secs], [25, 8, 5, 6, 8, 25]);
+  const db = dayItems(dayFor(plan, "2026-10-24"));
+  assert.ok(db.filter((it) => ["goblet", "db_row", "db_ohp", "db_rdl"].includes(it.ex)).every((it) => it.reps === 10 && /heavier/.test(it.note)));
+});
+
+test("corrections from data/corrections.json are applied once, then mirrored", async () => {
+  const storage = memStorage(), sent = [];
+  const corr = { corrections: [{ id: "x1", set: { w: 15 } }, { id: "not-here", set: { w: 99 } }] };
+  const fetchJson = async (u) => (u.endsWith("corrections.json") ? corr : u.endsWith("history.json") ? { entries: [{ id: "x1", ex: "goblet", w: 10, sets: 3, reps: 10, ts: 1, day: "2026-10-24" }], done: [] } : fetchData(u));
+  const s = createLocalStore({ storage, fetchJson, mirror: async (d) => { sent.push(d.entries.map((e) => e.w).join()); } });
+  const e = (await s.entries())[0];
+  assert.equal(e.w, 15); assert.equal(e.corrected, true);
+  // a later edit isn't overwritten by the same correction on the next page load
+  const all = JSON.parse(storage.getItem("bb.entries")); all[0].w = 17.5; storage.setItem("bb.entries", JSON.stringify(all));
+  const s2 = createLocalStore({ storage, fetchJson, mirror: async () => {} });
+  assert.equal((await s2.entries())[0].w, 17.5);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(sent.at(-1), "15", "the corrected log is mirrored");
+});
+
+test("dumbbell weight: last logged by default, − / + in 2.5 lb steps, kept across sets", async () => {
+  const { weightFor, adjustWeight } = await import("../js/plan.js");
+  const goblet = dayItems(dayFor(plan, "2026-10-27")).find((it) => it.ex === "goblet");
+  const log = [{ ex: "goblet", w: 15, sets: 3, reps: 10, ts: 5, day: "2026-10-24" }];
+  assert.equal(weightFor(goblet, null, log, "2026-10-27"), 15);
+  let dr = adjustWeight(goblet, null, log, "2026-10-27", 2.5);
+  assert.equal(weightFor(goblet, dr, log, "2026-10-27"), 17.5);
+  const r = tickSet(goblet, dr);
+  assert.equal(r.draft.w, 17.5, "the next set keeps it");
+  assert.equal(undoSet(r.draft).w, 17.5);
+  assert.equal(weightFor(goblet, adjustWeight(goblet, { w: 0 }, log, "x", -2.5), log, "x"), 0, "never below 0");
+  const hang = dayItems(dayFor(plan, "2026-10-26")).find((it) => it.ex === "hang");
+  assert.equal(weightFor(hang, { w: 20 }, log, "x"), 0, "bodyweight exercises have no weight");
+  assert.match(goblet.note, /15 lb/);
+});
+
+test("camera box shape: follows the camera; floor exercises on an upright phone get the sideways hint", async () => {
+  const { camShape, MOVES } = await import("../js/moves.js");
+  assert.deepEqual(camShape(1280, 720, MOVES.pushup), { aspect: "1280 / 720", ratio: 1280 / 720, portrait: false, hint: null });
+  const up = camShape(720, 1280, MOVES.pushup);
+  assert.equal(up.portrait, true); assert.match(up.hint, /sideways/);
+  assert.match(camShape(720, 1280, MOVES.bridge).hint, /sideways/);
+  assert.equal(camShape(720, 1280, MOVES.squat).hint, null, "standing exercises are fine upright");
+  assert.equal(camShape(720, 1280, MOVES.rdl).hint, null);
+  assert.equal(camShape(0, 0, MOVES.pushup).aspect, "16 / 9", "before the camera reports its size");
+});
+
+test("skip a training day: it and everything after move back a day; undo restores; rest days stay put", async () => {
+  const { skipPlan, undoSkipPlan, canSkip, canUndoSkip } = await import("../js/plan.js");
+  const now = new Date(2026, 9, 26, 9).getTime();                  // Mon Oct 26, morning
+  const r = skipPlan(plan, "2026-10-26", now);
+  const kinds = (p) => p.days.filter((d) => d.date >= "2026-10-26").map((d) => `${d.date.slice(8)}:${d.kind}`).join(" ");
+  assert.equal(kinds(r.plan), "26:Skipped 27:Full 28:DBs 29:Easy 30:Full 31:DBs");
+  assert.deepEqual(r.record, { date: "2026-10-26", kind: "Full", title: "Pull, push and legs", shifted: true, ts: now });
+  assert.equal(r.plan.undo.on, "2026-10-26");
+  const day = dayFor(r.plan, "2026-10-26");
+  assert.ok(canUndoSkip(r.plan, day, "2026-10-26")); assert.ok(!canUndoSkip(r.plan, day, "2026-10-27"), "undo only on the same day");
+  assert.equal(kinds(undoSkipPlan(r.plan)), kinds(plan));
+  const easy = skipPlan(plan, "2026-10-28", now);
+  assert.equal(kinds(easy.plan), "26:Full 27:DBs 28:Easy 29:Full 30:DBs");
+  assert.ok(dayFor(easy.plan, "2026-10-28").skipped); assert.equal(easy.record.shifted, false);
+  assert.ok(canSkip(plan, dayFor(plan, "2026-10-26"), [], "2026-10-25"));
+  assert.ok(!canSkip(plan, dayFor(plan, "2026-10-24"), [], "2026-10-25"), "not a past day");
+  assert.ok(!canSkip(plan, dayFor(plan, "2026-10-26"), [{ date: "2026-10-26" }], "2026-10-25"), "not a finished day");
+});
+
+test("the plan list shows what was logged in the target's place", async () => {
+  const { resultText } = await import("../js/plan.js");
+  assert.equal(resultText({ ex: "bw_squat", sets: 3, reps: 15 }), "3 × 15");
+  assert.equal(resultText({ ex: "scap_pull", sets: 2, reps: 4, perSet: [7, 4] }), "7, 4");
+  assert.equal(resultText({ ex: "hang", sets: 2, reps: 25, perSet: [26, 25] }), "26, 25 s");
+  assert.equal(resultText({ ex: "hollow", sets: 3, reps: 20 }), "3 × 20 s");
+  assert.equal(resultText({ ex: "db_row", sets: 3, reps: 10, w: 15 }, { each: true }), "3 × 10 each side", "no weight in the list");
 });

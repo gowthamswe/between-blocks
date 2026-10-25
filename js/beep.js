@@ -1,6 +1,10 @@
 // Countdown beeps for holds and rest, shared by the plan screen and the camera coach.
 // Browsers only play sound after a tap, so call unlock() inside a click (Start, Done, Next set).
 let ctx = null;
+let muted = false;
+try { muted = localStorage.getItem("bb.muted") === "1"; } catch { /* default on */ }
+export const isMuted = () => muted;
+export function setMuted(on) { muted = !!on; try { localStorage.setItem("bb.muted", muted ? "1" : "0"); } catch { /* ignore */ } }
 
 export function unlock() {
   try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); } catch { ctx = null; }
@@ -8,7 +12,7 @@ export function unlock() {
 
 // short = a 3-2-1 tick; long = go / time's up
 export function beep(long = false) {
-  if (!ctx) return;
+  if (!ctx || muted) return;
   try {
     const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(), dur = long ? 0.45 : 0.12;
     o.type = "sine"; o.frequency.value = long ? 1320 : 880;

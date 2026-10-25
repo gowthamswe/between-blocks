@@ -11,6 +11,7 @@ import { createCoach } from "./coach.js";
 import { createVoice } from "./voice.js";
 import { createPose, isPhone } from "./pose.js";
 import { shouldEndSet } from "./plan.js";
+import { camShape } from "./moves.js";
 
 const pref = (k, d) => { try { const v = localStorage.getItem("bbc." + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
 const POSE_MSG = { nobody: ["Can't see you", "warn"], "not-visible": ["Get your whole body in view", "warn"], "bad-geometry": ["Adjust the camera", "warn"] };
@@ -26,7 +27,8 @@ export function createCamCoach({ move, item, cues, onRep = () => {}, onStatus = 
   el.innerHTML = `<video playsinline muted></video><canvas></canvas>
     <span class="cam-pill" data-tone="idle">Starting camera…</span>
     <div class="cam-last" hidden><b></b><span></span></div>
-    <div class="cam-caption" aria-live="polite"></div>`;
+    <div class="cam-caption" aria-live="polite"></div>
+    <div class="cam-hint" hidden></div>`;
   const video = el.querySelector("video"), canvas = el.querySelector("canvas"), g = canvas.getContext("2d");
   const pill = el.querySelector(".cam-pill"), last = el.querySelector(".cam-last"), caption = el.querySelector(".cam-caption");
   const analyzer = move.create(item);
@@ -45,7 +47,10 @@ export function createCamCoach({ move, item, cues, onRep = () => {}, onStatus = 
     voice.unlock();
     if (!navigator.mediaDevices?.getUserMedia) { setPill("This browser can't use the camera here", "warn"); throw new Error("no camera API"); }
     try {
-      const size = { width: { ideal: 1280 }, height: { ideal: 720 } }, id = pref("camera", "");
+      // ask for the picture in the screen's orientation: tall on an upright phone, wide otherwise
+      // (some phones rotate a landscape request for you, some crop it to a square)
+      const upright = innerHeight > innerWidth;
+      const size = upright ? { width: { ideal: 720 }, height: { ideal: 1280 } } : { width: { ideal: 1280 }, height: { ideal: 720 } }, id = pref("camera", "");
       stream = await navigator.mediaDevices.getUserMedia({ video: id ? { deviceId: { exact: id }, ...size } : { facingMode: "user", ...size }, audio: false });
     } catch (e) {
       setPill(e && e.name === "NotAllowedError" ? "Camera blocked: allow it in site settings" : e && e.name === "NotFoundError" ? "No camera found" : "Couldn't start the camera", "warn");
@@ -57,7 +62,8 @@ export function createCamCoach({ move, item, cues, onRep = () => {}, onStatus = 
     await new Promise((r) => (video.videoWidth ? r() : video.addEventListener("loadedmetadata", r, { once: true })));
     const facing = stream.getVideoTracks()[0].getSettings().facingMode;
     el.dataset.mirror = (pref("mirror", null) ?? (facing ? facing === "user" : !isPhone())) ? "1" : "0";
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    applyShape();
+    video.addEventListener("resize", applyShape);       // the phone was rotated: new shape
     setPill("Loading the pose model…");
     try { pose = await getPose((s) => setPill(s)); } catch (e) { setPill("Couldn't load the pose model", "warn"); throw e; }
     if (!live) return;
@@ -66,6 +72,18 @@ export function createCamCoach({ move, item, cues, onRep = () => {}, onStatus = 
     keepAwake(true);
     tick();
   }
+
+  // size the drawing surface to the video, and the box (the element we sit in) to the video's shape
+  function applyShape() {
+    if (!video.videoWidth) return;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const sh = camShape(video.videoWidth, video.videoHeight, move);
+    el.dataset.portrait = sh.portrait ? "1" : "0";
+    const hint = el.querySelector(".cam-hint"); hint.hidden = !sh.hint; hint.textContent = sh.hint || "";
+    shape = sh;
+    if (el.parentElement) { el.parentElement.style.aspectRatio = sh.aspect; el.parentElement.style.setProperty("--ar", sh.ratio.toFixed(4)); el.parentElement.dataset.portrait = el.dataset.portrait; }
+  }
+  let shape = camShape(0, 0, move);
 
   function tick() {
     if (!live) return;
@@ -137,6 +155,7 @@ export function createCamCoach({ move, item, cues, onRep = () => {}, onStatus = 
     get ready() { return ready; },
     get running() { return running; },
     get count() { return reps.length; },
+    get shape() { return shape; },
     // start counting a set; the coach's "get ready" line only before the first one
     beginSet(setTarget) {
       target = setTarget || 0;

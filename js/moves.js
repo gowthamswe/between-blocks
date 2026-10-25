@@ -8,7 +8,7 @@ import { createRdlAnalyzer, LM as RDL_LM } from "./rdl.js";
 import { PUSHUP_COACHING } from "./coach.js";
 
 const pushup = {
-  key: "pushup", name: "Push-ups", title: "Push-up coach", joint: "elbow", unit: "push-up",
+  key: "pushup", name: "Push-ups", title: "Push-up coach", joint: "elbow", unit: "push-up", lying: true,
   create: () => createPushupAnalyzer(),
   downWord: "Not counted: go deeper",
   coaching: PUSHUP_COACHING,
@@ -61,7 +61,7 @@ const goblet = { ...squatBase, key: "goblet", name: "Goblet squats", title: "Gob
 
 // Glute bridge, lying on your back side-on. The plan's squeeze ("3-second squeeze at the top") sets the hold.
 const bridge = {
-  key: "bridge", name: "Glute bridges", title: "Glute bridge coach", joint: "hip", unit: "bridge",
+  key: "bridge", name: "Glute bridges", title: "Glute bridge coach", joint: "hip", unit: "bridge", lying: true,
   create: (item) => createBridgeAnalyzer({ holdMs: holdFromNote(item && item.note) || 1000 }),
   coaching: {
     priority: ["low", "arch", "hold", "fast"],
@@ -122,3 +122,12 @@ export const MOVES = { pushup, squat, goblet, bridge, rdl };
 // plan exercise -> coach move
 export const MOVE_FOR = { pushup: "pushup", bw_squat: "squat", goblet: "goblet", glute_br: "bridge", db_rdl: "rdl" };
 export const moveFor = (ex) => MOVES[MOVE_FOR[ex]] || null;
+
+// The camera box takes the camera's own shape (tall when the phone stands upright, wide when it's sideways),
+// so nothing is cropped or letterboxed. Exercises done lying along the floor fit a sideways phone far better.
+export function camShape(width, height, move) {
+  if (!width || !height) return { aspect: "16 / 9", ratio: 16 / 9, portrait: false, hint: null };
+  const portrait = height > width;
+  return { aspect: `${width} / ${height}`, ratio: width / height, portrait,
+    hint: portrait && move && move.lying ? "Turn your phone sideways: lying down, you fit the picture much better" : null };
+}

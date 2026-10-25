@@ -13,6 +13,10 @@
 //
 // On first run the local store is seeded from data/history.json (the log exported from Between Blocks).
 //
+// Corrections: Claude can't edit this browser's log, so fixes go in data/corrections.json
+//   { "corrections": [{ "id": "<entry id>", "set": { "w": 15 }, "note": "why" }] }
+// Each is applied once (applied ids are remembered), then mirrored like any other change.
+//
 // Mirror: on localhost, after every change the whole log is PUT to the dev server (tools/serve.mjs),
 // which writes data/progress.json. Claude syncs that file into the Between Blocks artifact.
 // Best effort: if the server isn't there (plain http.server, hosted copy), nothing breaks.
@@ -49,7 +53,21 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
     set("entries", entries); set("done", done);
     set("seeded", { at: Date.now(), from: (hist && hist.exported) || null, count: entries.length });
   }
-  const ready = seed();
+  async function applyCorrections() {
+    let file = null;
+    try { file = await fetchJson(base + "corrections.json"); } catch { return; }   // none: nothing to do
+    const applied = new Set(get("corrections", []));
+    const todo = ((file && file.corrections) || []).filter((c) => c.id && c.set && !applied.has(c.id));
+    if (!todo.length) return;
+    const list = get("entries", []);
+    for (const c of todo) {
+      const e = list.find((x) => x.id === c.id);
+      if (e) Object.assign(e, c.set, { corrected: true });
+      applied.add(c.id);                 // an id that isn't here (another browser's log) is skipped for good
+    }
+    set("entries", list); set("corrections", [...applied]);
+  }
+  const ready = seed().then(applyCorrections);
   ready.then(() => push());   // send what's already here when the page opens, without making anything wait for it
 
   const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);

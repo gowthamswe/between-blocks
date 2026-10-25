@@ -1,0 +1,40 @@
+{
+ "_about": "One-time fixes to entries in the browser's log (Claude can't edit it directly). Each is applied once; see js/store.js.",
+ "corrections": [
+  {
+   "id": "lmvn1tqhxos5l8",
+   "set": {
+    "w": 15
+   },
+   "note": "2026-10-24 goblet: done with 15 lb dumbbells; logged 10 lb by default"
+  },
+  {
+   "id": "lmvn218daivmlu",
+   "set": {
+    "w": 15
+   },
+   "note": "2026-10-24 db_row: done with 15 lb dumbbells; logged 10 lb by default"
+  },
+  {
+   "id": "lmvn28lckaqhaz",
+   "set": {
+    "w": 15
+   },
+   "note": "2026-10-24 db_ohp: done with 15 lb dumbbells; logged 10 lb by default"
+  },
+  {
+   "id": "lmvn2f5a6txve0",
+   "set": {
+    "w": 15
+   },
+   "note": "2026-10-24 db_rdl: done with 15 lb dumbbells; logged 10 lb by default"
+  },
+  {
+   "id": "lmvn2r0rn8plf3",
+   "set": {
+    "w": 15
+   },
+   "note": "2026-10-24 farmer: done with 15 lb dumbbells; logged 10 lb by default"
+  }
+ ]
+}

@@ -58,6 +58,14 @@ export function entryText(e) {
   return `${sets}${per}${e.w ? ` · ${e.w} lb` : ""}`;
 }
 
+// What was logged, in the plan list's "3 × 15" form (no weight): "3 × 15", "7, 4" when sets differed, "26, 25 s".
+export function resultText(e, item) {
+  const varied = e.perSet && new Set(e.perSet).size > 1;
+  const unit = isTimed(e.ex) ? " s" : "";
+  if (varied) return e.perSet.join(", ") + unit;
+  return `${e.sets} × ${e.reps}${unit}${item && item.each ? " each side" : ""}`;
+}
+
 // Entries for a planned item. Older entries (from Between Blocks) don't record the item index,
 // so they match on day + exercise.
 // Results logged for a planned item: same day and exercise. Position only matters when the
@@ -73,6 +81,11 @@ export function lastEntry(entries, ex, beforeDay) {
 }
 
 // Starting values for the log form: the plan's target, and the last weight used for that exercise.
+// Dumbbell weight for an exercise: what you set with − / + for this session, else the last weight logged.
+export const weightFor = (item, draft, entries, date) => (isBodyweight(item.ex) ? 0 : draft && draft.w != null ? draft.w : logDefaults(item, entries, date).w);
+export const adjustWeight = (item, draft, entries, date, delta) =>
+  ({ ...(draft || {}), sets: (draft && draft.sets) || [], w: Math.max(0, Math.round((weightFor(item, draft, entries, date) + delta) * 2) / 2) });
+
 export function logDefaults(item, entries, date) {
   const last = lastEntry(entries, item.ex, date);
   return { sets: item.sets, reps: amount(item), w: isBodyweight(item.ex) ? 0 : (last && last.w) || 0 };
@@ -195,7 +208,8 @@ export function shouldEndSet({ running, count, target, lastRepT, invalidSince, n
 export function addSet(item, draft, set, now = Date.now()) {
   const sets = [...setsOf(draft).map((x) => (x.reps == null ? { ...x, reps: amount(item) } : x)), set];
   if (sets.length >= item.sets) return { complete: true, sets, draft: null };
-  return { complete: false, sets, draft: { sets, restEnd: item.rest ? now + item.rest * 1000 : null, holdStart: null } };
+  const keep = draft && draft.w != null ? { w: draft.w } : {};           // the weight you set stays for the next set
+  return { complete: false, sets, draft: { sets, restEnd: item.rest ? now + item.rest * 1000 : null, holdStart: null, ...keep } };
 }
 
 // A logged result turned back into sets, so its last set can be undone. Camera details aren't kept.
@@ -206,8 +220,9 @@ export function setsFromEntry(e) {
 
 export function undoSet(draft) {
   const sets = setsOf(draft).slice(0, -1);
-  if (!sets.length) return null;
-  return { sets, restEnd: null, holdStart: null };
+  const keep = draft && draft.w != null ? { w: draft.w } : {};
+  if (!sets.length) return Object.keys(keep).length ? { sets, ...keep } : null;
+  return { sets, restEnd: null, holdStart: null, ...keep };
 }
 
 // The entry once every set is done. Any camera sets make it a coach entry (form from those sets);
@@ -265,4 +280,53 @@ export function timerState(item, draft, now = Date.now()) {
     return left > 0 ? { mode: "rest", text: clock(left), label: "rest", tone: "rest" } : { mode: "go", text: "Go", label: "rest done", tone: "go" };
   }
   return { mode: "idle", text: item.rest ? clock(item.rest) : "—", label: item.rest ? "rest" : "no rest", tone: "idle" };
+}
+
+// ---------- skipping a day (ported from the Between Blocks page) ----------
+// Training day: a "Skipped" placeholder takes its date, and it plus every later non-skipped day moves back
+// one day (stepping over other skipped dates). Rest day: marked skipped in place, nothing moves.
+// The plan before the skip is kept in plan.undo, usable on the same calendar day.
+const addDays = (s, n) => { const [y, m, d] = s.split("-").map(Number); return dayKey(new Date(y, m - 1, d + n).getTime()); };
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+export function canSkip(plan, day, done, today = dayKey()) {
+  return !!(plan && day && !day.skipped && !done.some((x) => x.date === day.date) && day.date >= today);
+}
+export function canUndoSkip(plan, day, today = dayKey()) {
+  const u = plan && plan.undo;
+  return !!(u && day && u.date === day.date && u.on === today && u.days);
+}
+
+export function skipPlan(plan, date, now = Date.now()) {
+  const days = clone(planDays(plan)), orig = days.find((x) => x.date === date);
+  if (!orig) return null;
+  const stamp = { skipped: true, skippedAt: now, wasKind: orig.kind || "", wasTitle: orig.title || "" };
+  let out;
+  if (orig.kind === "Easy") out = days.map((x) => (x.date === date ? Object.assign(x, stamp) : x));
+  else {
+    const fixed = { [date]: 1 };
+    days.forEach((x) => { if (x.skipped) fixed[x.date] = 1; });
+    days.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    out = []; let cursor = null;
+    days.forEach((x) => {
+      if (x.date < date || x.skipped) { out.push(x); return; }
+      let c = addDays(x.date, 1);
+      if (cursor && c <= cursor) c = addDays(cursor, 1);
+      while (fixed[c]) c = addDays(c, 1);
+      cursor = c; x.date = c; out.push(x);
+    });
+    out.push(Object.assign({ date, kind: "Skipped", title: "Skipped", note: "", blocks: [] }, stamp));
+    out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+  const next = clone(plan); delete next.undo;
+  const before = clone(next.days || []);
+  next.days = out;
+  next.undo = { date, on: dayKey(now), days: before };
+  return { plan: next, record: { date, kind: orig.kind || "", title: orig.title || "", shifted: orig.kind !== "Easy", ts: now } };
+}
+
+export function undoSkipPlan(plan) {
+  const next = clone(plan);
+  next.days = clone(plan.undo.days); delete next.undo;
+  return next;
 }

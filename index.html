@@ -18,7 +18,9 @@
 <body class="plan-page">
   <div class="pg">
     <header class="pg-head">
-      <div class="brand"><b>Between Blocks</b></div>
+      <div class="brand"><b>Between Blocks</b> <span class="block-label" id="block-label"></span></div>
+      <button class="ghost head-btn" id="btn-beeps" type="button" aria-pressed="false">Beeps on</button>
+      <button class="ghost head-btn" id="btn-fs" type="button">Full screen</button>
       <nav class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-today" aria-selected="true" aria-controls="view-today" type="button">Today</button>
         <button class="tab" role="tab" id="tab-progress" aria-selected="false" aria-controls="view-progress" type="button">Progress</button>
@@ -34,6 +36,7 @@
     <section id="view-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
       <div class="sec-head"><h2>Where each exercise stands</h2><span class="hint">last 8 results, oldest first</span></div>
       <ul class="prog" id="prog"></ul>
+      <div id="coach-notes"></div>
     </section>
 
     <section id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
@@ -44,6 +47,11 @@
       </div>
       <p class="fine" id="hist-msg"></p>
       <div id="hist"></div>
+      <details class="manual" id="manual">
+        <summary>Add an entry by hand <span>for anything that isn't in the plan</span></summary>
+        <div class="manual-body" id="groups"></div>
+      </details>
+      <p class="status" id="status"></p>
     </section>
 
     <footer class="pg-foot" id="foot"></footer>

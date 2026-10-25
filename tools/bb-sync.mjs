@@ -34,9 +34,11 @@ const bbEntries = readDir("entries"), bbDone = readDir("done");
 const exportedIds = new Set(hist.entries.map((e) => e.id));
 const exportedDone = new Set(hist.done.map((d) => `${d.date}_${d.block ?? 0}`));
 const VIA = "bb-coach";
-const KEEP = ["ex", "w", "reps", "sets", "ts", "day", "block", "item", "src", "perSet", "form", "faults", "lowerS", "depth"];
+const KEEP = ["ex", "w", "reps", "sets", "ts", "day", "block", "item", "src", "perSet", "form", "faults", "lowerS", "depth", "edited", "corrected"];
 const clean = (e) => { const o = { via: VIA }; for (const k of KEEP) if (e[k] !== undefined) o[k] = e[k]; return o; };
-const same = (a, b) => JSON.stringify(Object.keys(a).sort().map((k) => [k, a[k]])) === JSON.stringify(Object.keys(b).sort().map((k) => [k, b[k]]));
+// compare by content: key order (at any depth) doesn't matter; Between Blocks may store fields in another order
+const canon = (v) => (Array.isArray(v) ? v.map(canon) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v);
+const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 
 const writes = [], report = { create: [], update: [], delete: [], onlyInBB: [], unchanged: 0 };
 const label = (e) => `${e.day || "?"} ${e.ex} ${e.sets}×${e.reps}${e.w ? ` @${e.w}` : ""}`;

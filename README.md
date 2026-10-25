@@ -14,6 +14,12 @@ Everything runs on your device. No video is recorded or uploaded.
 - **Push-ups, squats, glute bridges, RDLs:** tap *Coach* (under the set tiles). The coach takes the plan's target (e.g. 3 × 8), counts sets 1 of 3, runs the rest timer, and keeps finished sets if the page reloads. *Save to plan* logs all sets with the form score and takes you back.
 - **History → Copy last 14 days for Claude** gives Claude a plain-text log to plan the next days. **Download all progress** saves a JSON with the plan, every entry and the finished sessions. That file is what moves into shared storage later.
 
+### The cloud version (Between Blocks on claude.ai)
+
+`cloud.html` is the same plan screen, published as the Between Blocks artifact. There the plan and log live in the artifact's cloud database (`js/dbstore.js`: `plan/week`, `entries`, `done`, `skips`, and Claude's notes in `state/current`), so progress follows you across devices and Claude reads it directly. The camera isn't available inside claude.ai, so the Coach button there does nothing and none of the camera code ships: `js/planapp.js` loads the camera coach and the browser store only on demand. The cloud version adds Skip this day, Claude's notes on the Progress tab, and the connection status line.
+
+To publish it, send `cloud.html` with `css/app.css`, `css/plan.css` and `js/{planapp,plan,exercises,figures,beep,dbstore}.js` as its files.
+
 ### Syncing to Between Blocks (stopgap)
 
 Until there's shared storage, Claude copies your progress into the Between Blocks artifact on request:
