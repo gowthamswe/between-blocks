@@ -320,6 +320,8 @@ details.manual summary span { font-family: var(--body); font-weight: 400; font-s
 .fig .db { fill: var(--fig-db); }
 .fig .torso-fill { fill: var(--fig-torso); stroke: var(--fig-torso); }
 .fig .band { stroke: var(--fig-guide); opacity: .7; stroke-linecap: round; }
+.fig .cable { stroke: var(--fig-ink); opacity: .55; stroke-linecap: round; }
+.fig .cable.far { opacity: .3; }
 .fig .hand, .fig .hand-lab { fill: var(--fig-db); }
 
 /* "seen from above" map of his tower's top, on bar exercises */

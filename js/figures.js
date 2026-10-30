@@ -11,7 +11,7 @@ const F = (base, o) => ({ ...base, ...o });
 /* which drawing each exercise uses, and what to search for on YouTube */
 const FIG_OF = { arm_circles: "circles", hang: "hang", scap_pull: "scap", pullup_neg: "neg", pullup_b: "pullup_b", pullup: "pullup", knee_raise: "knee",
   pushup: "pushup", pushup_he: "pushup", bw_squat: "squat", goblet: "goblet", glute_br: "bridge", sl_bridge: "bridge", hollow: "hollow",
-  db_curl: "curl", db_ohp: "ohp", db_row: "row", db_rdl: "rdl", farmer: "carry" };
+  db_curl: "curl", db_ohp: "ohp", db_row: "row", db_rdl: "rdl", farmer: "carry", lat_pd: "lat_pd", face_pull: "face_pull" };
 const YT = { arm_circles: "arm circles shoulder warm up", hang: "dead hang beginner form", scap_pull: "scapular pull up beginner", pullup_neg: "pull up negatives beginner",
   pullup_b: "band assisted pull up form", pullup: "neutral grip pull up form", knee_raise: "hanging knee raise beginner form",
   pushup: "push up proper form beginner", pushup_he: "incline push up form", bw_squat: "bodyweight squat proper form",
@@ -92,6 +92,24 @@ const FIGS = {
     keys: [[0, 0], [0.5, 1], [1, 0]], period: 1500,
     phases: [[0.5, "Walk · stand tall"], [1.01, "Grip tight"]],
     guide: ["A", "S"], guideLabel: "stand tall", guideOff: [-40, 10], guideShift: [-22, 0],
+  }),
+  /* kneeling lat pulldown, facing the machine: knees on the floor, pulley overhead on the machine's top arm */
+  lat_pd: F(FLOOR, {
+    vb: "16 -40 208 254", ghost: true, cable: { post: [204, -34], pulley: [150, -30], arm: true },
+    a: { H:[118,72], N:[117,86], S:[116,96], E:[128,70], W:[140,46], P:[116,150], K:[120,200], A:[80,201], T:[68,205] },
+    b: { H:[112,73], N:[111,87], S:[110,98], E:[106,124], W:[126,104], P:[116,150], K:[120,200], A:[80,201], T:[68,205] },
+    keys: REP, period: 3800, lab: [22, -22],
+    phases: [[0.12, "Arms long"], [0.45, "Elbows down to your sides"], [0.55, "Hands to upper chest"], [0.92, "Up slowly · 2 sec"], [1.01, "Arms long"]],
+    guide: ["P", "S"], guideLabel: "tall, slight lean back", guideOff: [-62, 26], guideShift: [-16, 0],
+  }),
+  /* face pull, standing, facing the machine: rope at face height, pulled to the eyes with the elbows high */
+  face_pull: F(FLOOR, {
+    vb: "16 -2 208 216", lab: [22, 12], ghost: true, cable: { post: [210, 16], pulley: [204, 40] },
+    a: ov(ST, { E:[146,52], W:[172,46] }),
+    b: ov(ST, { E:[108,48], W:[124,38] }),
+    keys: REP, period: 3600,
+    phases: [[0.12, "Arms long"], [0.45, "Pull to your eyes"], [0.55, "Elbows high · squeeze"], [0.92, "Back slowly"], [1.01, "Arms long"]],
+    guide: ["A", "S"], guideLabel: "stand tall", guideOff: [-44, 10], guideShift: [-20, 0],
   }),
   bridge: {
     vb: "14 96 212 104", floor: 190, prop: "floor", ghost: true, far: [5, -2],
@@ -222,6 +240,18 @@ function makeSide(f, still) {
     svg.appendChild(sv("rect", { x: bx + 10, y: by + bh, width: 6, height: f.floor - by - bh, class: "bench" }));
     svg.appendChild(sv("rect", { x: bx + bw - 16, y: by + bh, width: 6, height: f.floor - by - bh, class: "bench" }));
   }
+  /* cable machine: the column with its weight stack, the pulley (on a top arm when it's overhead), and the
+     cable running from the pulley to each hand */
+  let cables = null;
+  if (f.cable) {
+    const c = f.cable, [px, top] = c.post;
+    svg.appendChild(sv("rect", { x: px - 6, y: top, width: 12, height: f.floor - top, rx: 2, class: "bench" }));
+    svg.appendChild(sv("rect", { x: px - 9, y: f.floor - 52, width: 18, height: 48, rx: 2, class: "db" }));
+    if (c.arm) svg.appendChild(sv("line", { x1: px, y1: top + 4, x2: c.pulley[0], y2: c.pulley[1], "stroke-width": 6, class: "prop" }));
+    cables = [sv("line", { "stroke-width": 1.4, class: "cable far" }), sv("line", { "stroke-width": 1.8, class: "cable" })];
+    cables.forEach((l) => svg.appendChild(l));
+    svg.appendChild(sv("circle", { cx: c.pulley[0], cy: c.pulley[1], r: 6, class: "bench" }));
+  }
   function body(cls, full) {
     const g = sv("g", { class: cls }), parts = {};
     const seg = (name, w, extra) => { const l = sv("line", { "stroke-width": w, class: "seg " + (extra || "") }); parts[name] = l; g.appendChild(l); };
@@ -258,6 +288,7 @@ function makeSide(f, still) {
     L(parts.upper, pose.S, pose.E); L(parts.fore, pose.E, pose.W); L(parts.hand, pose.W, [pose.W[0] + hd[0], pose.W[1] + hd[1]]);
     DB(parts.nDb, pose.W, false); DB(parts.fDb, fW, false);
     DB(parts.gDb, [pose.W[0] + 4, pose.W[1] + 2], true);
+    if (cables) { L(cables[0], f.cable.pulley, fW); L(cables[1], f.cable.pulley, pose.W); }
   }
   if (still) { place(body("figure", true), lerp(f.still != null ? f.still : 0.4)); return { svg, tick: null }; }
   if (f.ghost) place(body("ghost", false), f.b);
