@@ -17,7 +17,10 @@ const YT = { arm_circles: "arm circles shoulder warm up", hang: "dead hang begin
   pushup: "push up proper form beginner", pushup_he: "incline push up form", bw_squat: "bodyweight squat proper form",
   goblet: "goblet squat dumbbell form", glute_br: "glute bridge proper form", sl_bridge: "single leg glute bridge form",
   hollow: "hollow body hold beginner", db_curl: "dumbbell bicep curl form", db_ohp: "standing dumbbell overhead press form",
-  db_row: "one arm dumbbell row bench form", db_rdl: "dumbbell romanian deadlift form", farmer: "dumbbell farmers walk form" };
+  db_row: "one arm dumbbell row bench form", db_rdl: "dumbbell romanian deadlift form", farmer: "dumbbell farmers walk form",
+  lat_pd: "kneeling cable lat pulldown form", cable_row: "standing cable row form", cable_press: "standing cable chest press form",
+  cable_ohp: "half kneeling single arm cable overhead press", pushdown: "cable tricep pushdown rope form", face_pull: "cable face pull form",
+  cable_goblet: "cable goblet squat form", cable_rdl: "cable romanian deadlift form", pallof: "pallof press cable form" };
 export const BAR_EX = { hang: 1, scap_pull: 1, pullup_neg: 1, pullup_b: 1, pullup: 1, knee_raise: 1 };
 export const hasFigure = (ex) => !!FIG_OF[ex];
 export const ytUrl = (ex, name) => "https://www.youtube.com/results?search_query=" + encodeURIComponent(YT[ex] || `${name || ex} proper form`);

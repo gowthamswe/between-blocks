@@ -330,3 +330,25 @@ export function undoSkipPlan(plan) {
   next.days = clone(plan.undo.days); delete next.undo;
   return next;
 }
+
+// ---------- home or cable machine ----------
+// A training day can carry its other version: day.where is "home" or "cable" (missing = home), and
+// day.alt holds the other one ({ where, kind, title, note, blocks }). Switching swaps the two, so the
+// plan always says what you're actually doing and the log matches it. Locked once anything is logged.
+const WHERE_FIELDS = ["where", "kind", "title", "note", "blocks"];
+export const whereOf = (day) => (day && day.where) || "home";
+export function canSwapWhere(day, entries, done) {
+  return !!(day && day.alt && !day.skipped && !done.some((x) => x.date === day.date) && !entries.some((e) => e.day === day.date));
+}
+export function swapWhere(plan, date) {
+  const next = clone(plan);
+  const d = planDays(next).find((x) => x.date === date);
+  if (!d || !d.alt) return null;
+  const cur = {};
+  WHERE_FIELDS.forEach((f) => { if (d[f] !== undefined) cur[f] = d[f]; });
+  cur.where = whereOf(d);
+  WHERE_FIELDS.forEach((f) => { if (d.alt[f] !== undefined) d[f] = d.alt[f]; else delete d[f]; });
+  d.where = d.alt.where || "home";
+  d.alt = cur;
+  return next;
+}

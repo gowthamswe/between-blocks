@@ -9,7 +9,7 @@
 //
 // Everything is live: the store subscribes once and keeps a copy; onChange fires when anything changes
 // (a write from this page, another device, or Claude). In-progress sets stay in this browser (drafts).
-import { skipPlan, undoSkipPlan } from "./plan.js";
+import { skipPlan, undoSkipPlan, swapWhere } from "./plan.js";
 
 const P = "bb.";
 
@@ -75,6 +75,13 @@ export function createDbStore(db, { storage = globalThis.localStorage } = {}) {
       planDoc = undoSkipPlan(planDoc);
       await db.doc("plan/week").set(planDoc);
       await db.doc("skips/" + date).delete().catch(() => {});
+    },
+    // home <-> cable machine for one day (the plan carries both versions)
+    async swapDay(date) {
+      const next = swapWhere(planDoc, date);
+      if (!next) return;
+      planDoc = next;
+      await db.doc("plan/week").set(next);
     },
     async exportAll() { await ready; return { version: 1, exported: new Date().toISOString(), store: "cloud", plan: planDoc, entries, done }; },
   };

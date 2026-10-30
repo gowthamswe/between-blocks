@@ -36,7 +36,7 @@ test("skipped days stay skipped", () => {
 test("opens today, else the next planned day, else the last", () => {
   assert.equal(pickDay(plan, "2026-10-19"), "2026-10-19");
   assert.equal(pickDay(plan, "2026-10-01"), "2026-10-14");
-  assert.equal(pickDay(plan, "2026-11-01"), plan.days.at(-1).date);
+  assert.equal(pickDay(plan, "2026-12-01"), plan.days.at(-1).date);
 });
 
 test("finds an item from a coach link", () => {
@@ -334,7 +334,7 @@ test("camera sets end by themselves: target reached + a moment, or out of positi
 
 test("the week after Oct 23: bar / dumbbell / easy rhythm, warm-ups first, progressions", () => {
   const week = plan.days.filter((d) => d.date >= "2026-10-24" && d.date <= "2026-10-30");
-  assert.deepEqual(week.map((d) => d.kind), ["DBs", "Easy", "Full", "DBs", "Easy", "Full", "DBs"]);
+  assert.deepEqual(week.map((d) => d.kind), ["DBs", "Easy", "Full", "DBs", "Easy", "Full", "Cable"]);   // Oct 30: the cable trial starts (its dumbbell day is the home version)
   for (const d of week) {
     const items = dayItems(d);
     for (const it of items) assert.ok(EXERCISES[it.ex], `${d.date}: ${it.ex}`);
@@ -394,15 +394,15 @@ test("skip a training day: it and everything after move back a day; undo restore
   const now = new Date(2026, 9, 26, 9).getTime();                  // Mon Oct 26, morning
   const r = skipPlan(plan, "2026-10-26", now);
   const kinds = (p) => p.days.filter((d) => d.date >= "2026-10-26").map((d) => `${d.date.slice(8)}:${d.kind}`).join(" ");
-  assert.equal(kinds(r.plan), "26:Skipped 27:Full 28:DBs 29:Easy 30:Full 31:DBs");
+  assert.equal(kinds(r.plan), "26:Skipped 27:Full 28:Easy 29:DBs 30:Full 31:Cable 01:Easy 02:Full 03:Cable 04:Easy 05:Full 06:Cable");   // Oct 28 was already skipped, so it stays put
   assert.deepEqual(r.record, { date: "2026-10-26", kind: "Full", title: "Pull, push and legs", shifted: true, ts: now });
   assert.equal(r.plan.undo.on, "2026-10-26");
   const day = dayFor(r.plan, "2026-10-26");
   assert.ok(canUndoSkip(r.plan, day, "2026-10-26")); assert.ok(!canUndoSkip(r.plan, day, "2026-10-27"), "undo only on the same day");
   assert.equal(kinds(undoSkipPlan(r.plan)), kinds(plan));
-  const easy = skipPlan(plan, "2026-10-28", now);
-  assert.equal(kinds(easy.plan), "26:Full 27:DBs 28:Easy 29:Full 30:DBs");
-  assert.ok(dayFor(easy.plan, "2026-10-28").skipped); assert.equal(easy.record.shifted, false);
+  const easy = skipPlan(plan, "2026-10-31", now);
+  assert.equal(kinds(easy.plan), kinds(plan));
+  assert.ok(dayFor(easy.plan, "2026-10-31").skipped); assert.equal(easy.record.shifted, false);
   assert.ok(canSkip(plan, dayFor(plan, "2026-10-26"), [], "2026-10-25"));
   assert.ok(!canSkip(plan, dayFor(plan, "2026-10-24"), [], "2026-10-25"), "not a past day");
   assert.ok(!canSkip(plan, dayFor(plan, "2026-10-26"), [{ date: "2026-10-26" }], "2026-10-25"), "not a finished day");
@@ -415,4 +415,53 @@ test("the plan list shows what was logged in the target's place", async () => {
   assert.equal(resultText({ ex: "hang", sets: 2, reps: 25, perSet: [26, 25] }), "26, 25 s");
   assert.equal(resultText({ ex: "hollow", sets: 3, reps: 20 }), "3 × 20 s");
   assert.equal(resultText({ ex: "db_row", sets: 3, reps: 10, w: 15 }, { each: true }), "3 × 10 each side", "no weight in the list");
+});
+
+// ---------- home or cable machine ----------
+import { swapWhere, canSwapWhere, whereOf } from "../js/plan.js";
+import { isCable } from "../js/exercises.js";
+
+test("cable-machine days carry their home version, and every exercise in both is known", () => {
+  const cableDays = plan.days.filter((d) => d.where === "cable");
+  assert.ok(cableDays.length >= 6, "the trial week is at the cable machine");
+  for (const d of cableDays) {
+    assert.equal(d.alt.where, "home");
+    for (const it of dayItems(d.alt)) assert.ok(EXERCISES[it.ex], `${d.date} home version: unknown exercise ${it.ex}`);
+    for (const it of dayItems(d)) assert.ok(EXERCISES[it.ex], `${d.date}: unknown exercise ${it.ex}`);
+  }
+  const cableDay = plan.days.find((d) => d.kind === "Cable");
+  assert.ok(dayItems(cableDay).filter((it) => isCable(it.ex)).length >= 5);
+});
+
+test("switching swaps the two versions and switching back restores the day", () => {
+  const d = plan.days.find((x) => x.where === "cable" && x.kind === "Cable");
+  const once = swapWhere(plan, d.date);
+  const s = dayFor(once, d.date);
+  assert.equal(whereOf(s), "home");
+  assert.equal(s.kind, d.alt.kind);
+  assert.deepEqual(dayItems(s).map((x) => x.ex), dayItems(d.alt).map((x) => x.ex));
+  assert.equal(s.alt.where, "cable");
+  assert.deepEqual(dayFor(swapWhere(once, d.date), d.date), d, "back to the cable version, unchanged");
+  assert.deepEqual(dayFor(plan, d.date), d, "the original plan isn't modified");
+  assert.equal(swapWhere(plan, "1999-01-01"), null);
+});
+
+test("the switch locks once anything is logged or the day is done", () => {
+  const d = plan.days.find((x) => x.alt);
+  assert.equal(canSwapWhere(d, [], []), true);
+  assert.equal(canSwapWhere(d, [{ ex: "pushup", day: d.date, ts: 1 }], []), false);
+  assert.equal(canSwapWhere(d, [], [{ date: d.date }]), false);
+  assert.equal(canSwapWhere(plan.days.find((x) => !x.alt), [], []), false);
+});
+
+test("the local store keeps a switched day across reloads", async () => {
+  const storage = memStorage();
+  const d = plan.days.find((x) => x.alt);
+  const s = createLocalStore({ storage, fetchJson: fetchData, mirror: null });
+  await s.swapDay(d.date);
+  assert.equal(whereOf(dayFor(await s.plan(), d.date)), d.alt.where);
+  const s2 = createLocalStore({ storage, fetchJson: fetchData, mirror: null });
+  assert.equal(whereOf(dayFor(await s2.plan(), d.date)), d.alt.where);
+  await s2.swapDay(d.date);
+  assert.equal(whereOf(dayFor(await s2.plan(), d.date)), whereOf(d));
 });

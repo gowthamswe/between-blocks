@@ -3,8 +3,9 @@
 // Loaded on demand (import() below): the camera coach (js/camcoach.js, js/moves.js and the exercise analyzers)
 // only when Coach is tapped in the local app, and only the one store each version uses. The cloud page
 // (cloud.html on claude.ai) never loads the camera code or the browser store, so it doesn't ship them.
-import { exName, isTimed, isHold, isBodyweight, canCoach, CUES } from "./exercises.js";
-import { makeFigure, gripMap, BAR_EX, ytUrl } from "./figures.js";
+import { exName, isTimed, isHold, isBodyweight, canCoach, isCable, CUES } from "./exercises.js";
+import { makeFigure, gripMap, BAR_EX, ytUrl, hasFigure } from "./figures.js";
+import { whereOf, canSwapWhere } from "./plan.js";
 import { unlock as unlockAudio, beep, restBeep, isMuted, setMuted } from "./beep.js";
 import { EXERCISES } from "./exercises.js";
 import { restKey, restAfter, nextToDo, addSet, coachSet, weightFor, adjustWeight, canSkip, canUndoSkip, lastEntry, resultText } from "./plan.js";
@@ -29,13 +30,14 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function loop(now) { ticks.forEach((t) => t(now)); raf = ticks.length ? requestAnimationFrame(loop) : 0; }
 function startTicks() { cancelAnimationFrame(raf); raf = 0; if (ticks.length && !reduceMotion) raf = requestAnimationFrame(loop); }
 
-function media(ex) {
+function media(ex, where = "home") {
   const host = el("div", { class: "media fig" });
   const f = makeFigure(ex);
   f.svg.setAttribute("role", "img"); f.svg.setAttribute("aria-label", `${exName(ex)}, animated drawing`); f.svg.removeAttribute("aria-hidden");
   host.append(f.svg);
   if (f.tick) ticks.push(f.tick);
-  if (BAR_EX[ex]) host.append(gripMap(ex));
+  if (!hasFigure(ex)) host.append(el("p", { class: "nofig-note", text: "No drawing for this one yet. Tap ▶ for a demo video, or (i) for form cues." }));
+  if (BAR_EX[ex] && where !== "cable") host.append(gripMap(ex));   // the grip map is his power tower's top
   const yt = el("a", { class: "yt", href: ytUrl(ex, exName(ex)), target: "_blank", rel: "noopener", "aria-label": "Find a demo video on YouTube", title: "Find a demo video" });
   yt.innerHTML = '<svg viewBox="0 0 26 18" aria-hidden="true"><path fill="#fff" d="M10 3.5v11l9-5.5z"/></svg>';
   host.append(yt);
@@ -73,7 +75,7 @@ function renderWeek() {
       onclick: () => { stopCam(); sel = d.date; openForm = null; openItem = undefined; msg = ""; history.replaceState(null, "", "?day=" + d.date); render(); } },
       el("span", { class: "day-dow", text: d.date === today ? "Today" : DOW[dt.getDay()] }),
       el("span", { class: "day-num", text: `${MON[dt.getMonth()]} ${dt.getDate()}` }),
-      el("span", { class: "day-flag" }, st === "done" ? TICK() : st === "skipped" ? "SKIP" : d.kind === "Easy" ? "EASY" : st === "started" ? "•" : "")));
+      el("span", { class: "day-flag" }, st === "done" ? TICK() : st === "skipped" ? "SKIP" : d.kind === "Easy" ? "EASY" : st === "started" ? "•" : whereOf(d) === "cable" ? "CABLE" : "")));
   });
   const on = w.querySelector('[aria-pressed="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "center" });
@@ -135,6 +137,22 @@ function skipControl(d) {
   return wrap;
 }
 
+// Home or cable machine: where today's version is done, and a switch when the plan has the other version.
+function whereRow(d) {
+  if (!d.where && !d.alt) return null;                 // older plans: nothing to say
+  const where = whereOf(d);
+  const row = el("div", { class: "where-row" },
+    el("span", { class: "where-chip", "data-where": where, text: where === "cable" ? "Cable machine" : "Home" }));
+  if (d.alt && store.swapDay) {
+    if (canSwapWhere(d, entries, done)) {
+      row.append(el("button", { class: "linkish", type: "button", id: "swap-where",
+        text: d.alt.where === "cable" ? "Switch to the cable-machine version" : "Switch to the home version",
+        onclick: async () => { stopCam(); await store.swapDay(d.date); plan = await store.plan(); openItem = undefined; render(); } }));
+    } else row.append(el("span", { class: "fine", text: "Can't switch once something's logged" }));
+  }
+  return row;
+}
+
 // Rough session length, as Between Blocks estimated it: work time plus rests plus ~75 s changeover per exercise.
 function sessionMins(items) {
   const secs = items.reduce((a, it) => a + it.sets * (it.secs ? it.secs + 5 : (it.reps || 5) * (it.each ? 8 : 4)) + Math.max(0, it.sets - 1) * (it.rest || 0) + 75, 0);
@@ -149,6 +167,7 @@ function renderMap(d, items, cur, drafts) {
     el("h1", { class: "map-title", text: d.title }),
     el("p", { class: "map-facts" }, shortDate(d.date) + (d.date === today ? " · today" : "") + ` · ~${sessionMins(items)} min · ${items.length} exercises · ${items.reduce((a, it) => a + it.sets, 0)} sets`,
       st === "done" ? el("span", { class: "done-pill" }, TICK(), "Done") : null));
+  const wr = whereRow(d); if (wr) map.append(wr);
   if (d.note) map.append(el("p", { class: "coach-note", text: d.note }));
   const ol = el("ol", { class: "moves" });
   items.forEach((it, i) => {
@@ -278,15 +297,18 @@ async function clearSets(d, it, logged) {
 }
 
 // Dumbbell weight for this exercise today, set before (or between) sets; it's what gets logged.
-const WEIGHT_STEP = 2.5;
+// Cable exercises log the number on the weight stack, in its 5 lb steps.
+const WEIGHT_STEP = 2.5, STACK_STEP = 5;
 function weightRow(d, it, draft, logged) {
   if (isBodyweight(it.ex) || logged.length) return null;
+  const cable = isCable(it.ex), stepBy = cable ? STACK_STEP : WEIGHT_STEP;
   const w = weightFor(it, draft, entries, d.date);
   const step = (delta) => async () => { await saveSets(d, it, adjustWeight(it, draft, entries, d.date, delta)); render(); };
-  return el("div", { class: "weight-row" }, el("span", { class: "weight-lab", text: "Dumbbells" }),
-    el("button", { class: "rep-arrow w-btn", type: "button", "aria-label": `Lighter by ${WEIGHT_STEP} lb`, disabled: w <= 0, onclick: step(-WEIGHT_STEP) }, "−"),
+  return el("div", { class: "weight-row" }, el("span", { class: "weight-lab", text: cable ? "Stack" : "Dumbbells" }),
+    el("button", { class: "rep-arrow w-btn", type: "button", "aria-label": `Lighter by ${stepBy} lb`, disabled: w <= 0, onclick: step(-stepBy) }, "−"),
     el("output", { class: "weight-val", text: `${w} lb` }),
-    el("button", { class: "rep-arrow w-btn", type: "button", "aria-label": `Heavier by ${WEIGHT_STEP} lb`, onclick: step(WEIGHT_STEP) }, "+"));
+    el("button", { class: "rep-arrow w-btn", type: "button", "aria-label": `Heavier by ${stepBy} lb`, onclick: step(stepBy) }, "+"),
+    cable && !w ? el("span", { class: "fine", text: "set it to the pin you use" }) : null);
 }
 
 function tiles(d, it, draft, logged, rest, camOn) {
@@ -372,7 +394,7 @@ async function renderStage(d, items, cur, draft, rest) {
         el("button", { class: "linkish", type: "button", text: "Clear", onclick: () => clearSets(d, it, logged) }))));
     if (openForm === e.id) stage.append(logForm(d, it, e));
   });
-  stage.append(camOn ? el("div", { class: "media cam-media", "data-portrait": cam.shape.portrait ? "1" : "0", style: `aspect-ratio: ${cam.shape.aspect}; --ar: ${cam.shape.ratio.toFixed(4)}` }, cam.el) : media(it.ex));
+  stage.append(camOn ? el("div", { class: "media cam-media", "data-portrait": cam.shape.portrait ? "1" : "0", style: `aspect-ratio: ${cam.shape.aspect}; --ar: ${cam.shape.ratio.toFixed(4)}` }, cam.el) : media(it.ex, whereOf(d)));
 
   return stage;
 }
@@ -496,7 +518,17 @@ function wireTabs() {
   }));
 }
 
+// One redraw at a time. A change can ask for a redraw while one is running (e.g. tapping Skip or the
+// home/cable switch redraws, and the database's confirmation redraws again); overlapping redraws each
+// cleared the screen and then both added the session list, so it showed twice. Queue them instead.
+let rendering = null, renderAgain = false;
 async function render() {
+  if (rendering) { renderAgain = true; return rendering; }
+  rendering = (async () => { do { renderAgain = false; await renderOnce(); } while (renderAgain); })();
+  try { await rendering; } finally { rendering = null; }
+}
+
+async function renderOnce() {
   ticks = []; timerCtx = null;
   const prof = plan && plan.profile ? `${plan.profile.weight_lb} lb · ${plan.profile.height} · ` : "";
   $("foot").textContent = prof + (inCloud()

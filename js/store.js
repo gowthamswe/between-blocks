@@ -21,6 +21,8 @@
 // which writes data/progress.json. Claude syncs that file into the Between Blocks artifact.
 // Best effort: if the server isn't there (plain http.server, hosted copy), nothing breaks.
 
+import { swapWhere } from "./plan.js";
+
 const P = "bb.";
 const onLocalhost = () => { try { return ["localhost", "127.0.0.1", "[::1]"].includes(globalThis.location.hostname); } catch { return false; } };
 
@@ -75,9 +77,18 @@ export function createLocalStore({ storage = globalThis.localStorage, fetchJson 
   return {
     kind: "local",
     ready,
+    // data/plan.json is Claude's; days you switched between home and cable machine are kept here
+    // (by date) and applied on top, so they survive a reload.
     async plan({ fresh = false } = {}) {
       if (!planCache || fresh) planCache = await fetchJson(base + "plan.json");
-      return planCache;
+      let p = planCache;
+      for (const date of get("swapped", [])) p = swapWhere(p, date) || p;
+      return p;
+    },
+    async swapDay(date) {
+      const s = new Set(get("swapped", []));
+      if (s.has(date)) s.delete(date); else s.add(date);
+      set("swapped", [...s]);
     },
     async entries() { await ready; return get("entries", []); },
     async addEntry(e) {
