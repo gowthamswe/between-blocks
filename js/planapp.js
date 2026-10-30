@@ -22,6 +22,7 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 let plan = null, entries = [], done = [], sel = null, openForm = null, msg = "";
 let cuesOpen = false;      // the (i) panel with form cues
+let dayNoteOpen = false;   // the (i) next to the day title: the day's coach note
 let openItem = undefined;   // item key whose picture is open; undefined = pick the next one to do
 
 // ---------- pictures: one animation loop for whatever figures are on screen ----------
@@ -164,11 +165,13 @@ function renderMap(d, items, cur, drafts) {
   const today = dayKey(), st = dayStatus(d, entries, done);
   const map = el("aside", { class: "map" });
   map.append(el("span", { class: "s-kind", text: d.kind }),
-    el("h1", { class: "map-title", text: d.title }),
+    el("div", { class: "map-title-row" }, el("h1", { class: "map-title", text: d.title }),
+      d.note ? el("button", { class: "info-btn", type: "button", "aria-label": "About this day", "aria-expanded": dayNoteOpen ? "true" : "false", "aria-controls": "day-note",
+        onclick: () => { dayNoteOpen = !dayNoteOpen; render(); } }, "i") : null),
     el("p", { class: "map-facts" }, shortDate(d.date) + (d.date === today ? " · today" : "") + ` · ~${sessionMins(items)} min · ${items.length} exercises · ${items.reduce((a, it) => a + it.sets, 0)} sets`,
       st === "done" ? el("span", { class: "done-pill" }, TICK(), "Done") : null));
   const wr = whereRow(d); if (wr) map.append(wr);
-  if (d.note) map.append(el("p", { class: "coach-note", text: d.note }));
+  if (d.note && dayNoteOpen) map.append(el("p", { class: "coach-note", id: "day-note", text: d.note }));
   const ol = el("ol", { class: "moves" });
   items.forEach((it, i) => {
     const key = itemKey(d.date, it), logged = entriesFor(entries, d.date, it), pr = setProgress(it, drafts[i], logged);
