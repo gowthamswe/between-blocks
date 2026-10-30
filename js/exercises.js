@@ -70,7 +70,7 @@ export const CUES = {
   farmer:     ["A dumbbell in each hand, arms straight at your sides", "Stand tall: shoulders down and back, no leaning", "Short, steady steps. Set them down before your grip fails"],
   // cable machine: first time on each, pick a pin you could move about 15 times, and note the number
   lat_pd:     ["Pulley at the top, two handles; kneel facing the stack, arms straight overhead", "Pull your elbows down to your sides until your hands reach your upper chest", "Let the weight back up slowly, all the way to straight arms"],
-  cable_row:  ["Pulley at chest height; step back until the weight lifts, knees soft", "Pull the handles to your lower ribs, squeezing your shoulder blades together", "Arms all the way straight between reps; don't rock your body"],
+  cable_row:  ["Sit on the bench facing the machine, pulley low, feet planted", "Pull the handles to your lower ribs, squeezing your shoulder blades together", "Arms all the way straight between reps; sit tall, don't rock"],
   cable_press: ["Pulleys at chest height, a handle in each hand, facing away; one foot forward", "Press forward until your arms are straight, hands meeting in front", "Back slowly until your hands are beside your chest"],
   cable_ohp:  ["Pulley at the bottom; kneel on the knee on the cable's side, handle at your shoulder", "Squeeze your glutes and press straight up, no leaning", "Lower to your shoulder slowly; all reps on one side, then switch"],
   pushdown:   ["Pulley at the top, rope or short bar; elbows pinned to your sides", "Push down until your arms are straight, spread the rope at the bottom", "Let it up until your forearms are just above level; elbows don't move"],

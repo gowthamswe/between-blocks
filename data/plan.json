@@ -764,7 +764,7 @@
    "where": "cable",
    "kind": "Full",
    "title": "Pull, push and legs",
-   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
+   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar; stand on the bench to reach it and to step up for negatives. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
    "blocks": [
     {
      "name": "Today's session",
@@ -778,7 +778,7 @@
       },
       {
        "ex": "hang",
-       "note": "on the machine's top bar, palms facing each other if the handles allow",
+       "note": "on the machine's top bar, palms facing each other if the handles allow; the bench gets you up there",
        "rest": 60,
        "secs": 25,
        "sets": 2
@@ -798,7 +798,7 @@
       },
       {
        "ex": "pullup_neg",
-       "note": "5-second lower; only if you can step up safely to chin over the bar, otherwise skip it",
+       "note": "5-second lower; step up from the bench to get your chin over the bar",
        "reps": 1,
        "rest": 90,
        "sets": 5
@@ -944,7 +944,7 @@
        "sets": 3,
        "reps": 10,
        "rest": 60,
-       "note": "first time: a pin you could do about 15 times"
+       "note": "seated on the bench; first time: a pin you could do about 15 times"
       },
       {
        "ex": "cable_ohp",
@@ -1080,7 +1080,7 @@
    "where": "cable",
    "kind": "Full",
    "title": "Pull, push and legs",
-   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
+   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar; stand on the bench to reach it and to step up for negatives. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
    "blocks": [
     {
      "name": "Today's session",
@@ -1094,7 +1094,7 @@
       },
       {
        "ex": "hang",
-       "note": "on the machine's top bar, palms facing each other if the handles allow",
+       "note": "on the machine's top bar, palms facing each other if the handles allow; the bench gets you up there",
        "rest": 60,
        "secs": 25,
        "sets": 2
@@ -1114,7 +1114,7 @@
       },
       {
        "ex": "pullup_neg",
-       "note": "5-second lower; only if you can step up safely to chin over the bar, otherwise skip it",
+       "note": "5-second lower; step up from the bench to get your chin over the bar",
        "reps": 1,
        "rest": 90,
        "sets": 5
@@ -1260,7 +1260,7 @@
        "sets": 3,
        "reps": 10,
        "rest": 60,
-       "note": "first time: a pin you could do about 15 times"
+       "note": "seated on the bench; first time: a pin you could do about 15 times"
       },
       {
        "ex": "cable_ohp",
@@ -1396,7 +1396,7 @@
    "where": "cable",
    "kind": "Full",
    "title": "Pull, push and legs",
-   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
+   "note": "Cable-machine version. Hangs, scap pulls and negatives go on the machine's top bar; stand on the bench to reach it and to step up for negatives. Kneeling lat pulldowns stand in for band pull-ups this week; bring your band if you'd rather keep those. Set the Stack row to the pin you use before logging, so next week's weights come from it. You can switch to the home version until you log something.",
    "blocks": [
     {
      "name": "Today's session",
@@ -1410,7 +1410,7 @@
       },
       {
        "ex": "hang",
-       "note": "on the machine's top bar, palms facing each other if the handles allow",
+       "note": "on the machine's top bar, palms facing each other if the handles allow; the bench gets you up there",
        "rest": 60,
        "secs": 25,
        "sets": 2
@@ -1430,7 +1430,7 @@
       },
       {
        "ex": "pullup_neg",
-       "note": "5-second lower; only if you can step up safely to chin over the bar, otherwise skip it",
+       "note": "5-second lower; step up from the bench to get your chin over the bar",
        "reps": 1,
        "rest": 90,
        "sets": 5
@@ -1576,7 +1576,7 @@
        "sets": 3,
        "reps": 10,
        "rest": 60,
-       "note": "first time: a pin you could do about 15 times"
+       "note": "seated on the bench; first time: a pin you could do about 15 times"
       },
       {
        "ex": "cable_ohp",
